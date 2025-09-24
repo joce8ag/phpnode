@@ -204,6 +204,29 @@ clean-all: ## Limpiar todo (incluyendo imágenes)
 		docker image prune -a -f; \
 	fi
 
+destroy: ## Eliminar COMPLETAMENTE todo lo relacionado con sboil (excepto red_general)
+	@echo "$(RED)⚠️  ADVERTENCIA: Esto eliminará TODOS los recursos de Docker relacionados con sboil$(NC)"
+	@echo "$(RED)⚠️  Incluyendo: contenedores, imágenes, volúmenes y red de aplicación$(NC)"
+	@echo "$(GREEN)✓ Se preservará la red 'red_general'$(NC)"
+	@read -p "¿Estás seguro? Esta acción NO se puede deshacer [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "$(YELLOW)Deteniendo y eliminando contenedores...$(NC)"; \
+		docker-compose -f $(COMPOSE_FILE) down -v --remove-orphans; \
+		echo "$(YELLOW)Eliminando volúmenes específicos...$(NC)"; \
+		docker volume rm -f $(BASE_APP_NAME)_redis_data $(BASE_APP_NAME)_node_modules_data $(BASE_APP_NAME)_nginx_cache 2>/dev/null || true; \
+		echo "$(YELLOW)Eliminando imágenes del proyecto...$(NC)"; \
+		docker images | grep "$(BASE_APP_NAME)" | awk '{print $$3}' | xargs -r docker rmi -f; \
+		echo "$(YELLOW)Eliminando red de aplicación...$(NC)"; \
+		docker network rm $(BASE_APP_NAME)_app_network 2>/dev/null || true; \
+		echo "$(YELLOW)Limpiando recursos huérfanos...$(NC)"; \
+		docker system prune -f; \
+		echo "$(GREEN)✓ Eliminación completa finalizada$(NC)"; \
+		echo "$(BLUE)Red 'red_general' preservada correctamente$(NC)"; \
+	else \
+		echo "$(GREEN)Operación cancelada$(NC)"; \
+	fi
+
 # === COMANDOS DE INFORMACIÓN ===
 info: ## Mostrar información del entorno
 	@echo "$(BLUE)=== INFORMACIÓN DEL ENTORNO ===$(NC)"

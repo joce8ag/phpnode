@@ -52,7 +52,7 @@ services:
     # No exponer puertos - se usará Nginx Proxy Manager
     volumes:
       - ./app:/var/www/html
-      - /var/www/html/node_modules  # Volume anónimo para node_modules
+      - node_modules_data:/var/www/html/node_modules
     networks:
       - app_network
       - red_general
@@ -139,4 +139,6 @@ networks:
 
 volumes:
   redis_data:
+    driver: local
+  node_modules_data:
     driver: local

@@ -94,6 +94,9 @@ make status
 
 # Reiniciar servicios
 make restart
+
+# ELIMINAR COMPLETAMENTE el proyecto (preserva red_general)
+make destroy
 ```
 
 ### Comandos de Laravel
@@ -251,6 +254,40 @@ Esta configuración es compatible con Nginx Proxy Manager tanto en desarrollo co
 - **HTTP**: Puerto 80 del contenedor
 - **WebSockets**: Puerto 8080 del contenedor
 
+## 🔧 Mejoras Técnicas Recientes
+
+### ✅ Corrección de Volúmenes Docker
+
+**Problema solucionado:** Se eliminó el volumen anónimo que causaba problemas de gestión.
+
+**Antes:**
+```yaml
+volumes:
+  - ./app:/var/www/html
+  - /var/www/html/node_modules  # Volume anónimo problemático
+```
+
+**Después:**
+```yaml
+volumes:
+  - ./app:/var/www/html
+  - node_modules_data:/var/www/html/node_modules  # Volume nombrado
+```
+
+**Beneficios:**
+- ✅ **Gestión mejorada:** El volumen tiene un nombre específico
+- ✅ **Reutilización:** Se mantiene entre recreaciones de contenedores
+- ✅ **Limpieza fácil:** Se puede eliminar específicamente
+- ✅ **Mejor organización:** Fácil identificación en `docker volume ls`
+
+### ✅ Nuevo Sistema de Limpieza Completa
+
+Se agregó el comando `make destroy` que:
+- 🔥 Elimina **TODO** lo relacionado con el proyecto
+- 🛡️ **Preserva** la red `red_general`
+- ⚡ Incluye confirmación de seguridad
+- 📋 Muestra vista previa de lo que se eliminará
+
 ## 📋 Gestión de Aplicaciones
 
 ### Cambiar Nombre de la Aplicación Actual
@@ -380,6 +417,8 @@ chown -R www:www /var/www/html/bootstrap/cache
 
 ## 🧹 Limpieza
 
+### Limpieza básica
+
 ```bash
 # Limpiar recursos Docker no utilizados
 make clean
@@ -390,6 +429,39 @@ make clean-all
 # Crear backup antes de limpiar
 make backup
 ```
+
+### Limpieza completa del proyecto
+
+```bash
+# ELIMINAR COMPLETAMENTE todo lo relacionado con sboil
+# ⚠️ PRESERVA la red 'red_general'
+make destroy
+
+# O usando el script independiente
+./scripts/destroy-sboil.sh
+```
+
+#### ¿Qué elimina el comando `destroy`?
+
+**✅ ELIMINA:**
+- **Contenedores:** `sboil_php`, `sboil_nginx`, `sboil_node`, `sboil_reverb`, `sboil_queue`, `sboil_redis`, `sboil_scheduler`
+- **Volúmenes:** `redis_data`, `node_modules_data`, `nginx_cache`
+- **Imágenes:** Todas las imágenes construidas para el proyecto sboil
+- **Red de aplicación:** `sboil_app_network`
+- **Recursos huérfanos:** Containers, networks, volumes sin usar
+
+**🛡️ PRESERVA:**
+- **Red externa:** `red_general` (la mantiene intacta)
+- **Otras aplicaciones:** No afecta otros proyectos Docker
+- **Imágenes base:** nginx, php, node, redis (solo elimina las personalizadas)
+
+**🚀 Características:**
+- ✅ Confirmación de seguridad antes de ejecutar
+- ✅ Vista previa de recursos que se eliminarán
+- ✅ Limpieza completa y sistemática
+- ✅ Preservación inteligente de `red_general`
+- ✅ Feedback visual con colores
+- ✅ Manejo de errores robusto
 
 ## 📚 Documentación Adicional
 
