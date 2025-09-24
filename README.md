@@ -283,10 +283,12 @@ volumes:
 ### ✅ Nuevo Sistema de Limpieza Completa
 
 Se agregó el comando `make destroy` que:
-- 🔥 Elimina **TODO** lo relacionado con el proyecto
-- 🛡️ **Preserva** la red `red_general`
+- 🔥 Elimina **TODO** lo relacionado con el proyecto actual (dinámico según `BASE_APP_NAME`)
+- 🛡️ **Preserva** TODAS las otras redes y proyectos Docker
 - ⚡ Incluye confirmación de seguridad
 - 📋 Muestra vista previa de lo que se eliminará
+- 🔍 Verifica que las otras redes se mantuvieron intactas
+- 🎯 **Se adapta automáticamente** al nombre de la aplicación en la plantilla
 
 ## 📋 Gestión de Aplicaciones
 
@@ -433,27 +435,32 @@ make backup
 ### Limpieza completa del proyecto
 
 ```bash
-# ELIMINAR COMPLETAMENTE todo lo relacionado con sboil
-# ⚠️ PRESERVA la red 'red_general'
+# ELIMINAR COMPLETAMENTE todo lo relacionado con la aplicación actual
+# ⚠️ PRESERVA TODAS las otras redes y proyectos Docker
 make destroy
 
-# O usando el script independiente
-./scripts/destroy-sboil.sh
+# O usando el script independiente (detecta automáticamente el nombre)
+./scripts/destroy-app.sh
+
+# O especificando el nombre manualmente
+./scripts/destroy-app.sh mi-app-name
 ```
 
 #### ¿Qué elimina el comando `destroy`?
 
-**✅ ELIMINA:**
-- **Contenedores:** `sboil_php`, `sboil_nginx`, `sboil_node`, `sboil_reverb`, `sboil_queue`, `sboil_redis`, `sboil_scheduler`
-- **Volúmenes:** `redis_data`, `node_modules_data`, `nginx_cache`
-- **Imágenes:** Todas las imágenes construidas para el proyecto sboil
-- **Red de aplicación:** `sboil_app_network`
-- **Recursos huérfanos:** Containers, networks, volumes sin usar
+**✅ ELIMINA (solo del proyecto actual):**
+- **Contenedores:** `{app_name}_php`, `{app_name}_nginx`, `{app_name}_node`, `{app_name}_reverb`, `{app_name}_queue`, `{app_name}_redis`, `{app_name}_scheduler`
+- **Volúmenes:** `{app_name}_redis_data`, `{app_name}_node_modules_data`, `{app_name}_nginx_cache`
+- **Imágenes:** Todas las imágenes construidas para el proyecto actual
+- **Red de aplicación:** `{app_name}_app_network`
+
+*Donde `{app_name}` es el valor de `BASE_APP_NAME` en el Makefile*
 
 **🛡️ PRESERVA:**
-- **Red externa:** `red_general` (la mantiene intacta)
-- **Otras aplicaciones:** No afecta otros proyectos Docker
-- **Imágenes base:** nginx, php, node, redis (solo elimina las personalizadas)
+- **Todas las redes externas:** `red_general`, `webodm_default`, `cloudflare_default`, etc.
+- **Otras aplicaciones:** No afecta ningún otro proyecto Docker
+- **Imágenes base:** nginx, php, node, redis (solo elimina las personalizadas del proyecto actual)
+- **Volúmenes externos:** Solo elimina los volúmenes específicos del proyecto actual
 
 **🚀 Características:**
 - ✅ Confirmación de seguridad antes de ejecutar

@@ -204,25 +204,15 @@ clean-all: ## Limpiar todo (incluyendo imágenes)
 		docker image prune -a -f; \
 	fi
 
-destroy: ## Eliminar COMPLETAMENTE todo lo relacionado con sboil (excepto red_general)
-	@echo "$(RED)⚠️  ADVERTENCIA: Esto eliminará TODOS los recursos de Docker relacionados con sboil$(NC)"
+destroy: ## Eliminar COMPLETAMENTE todo lo relacionado con la aplicación (SOLO este proyecto)
+	@echo "$(RED)⚠️  ADVERTENCIA: Esto eliminará SOLO los recursos del proyecto $(BASE_APP_NAME)$(NC)"
 	@echo "$(RED)⚠️  Incluyendo: contenedores, imágenes, volúmenes y red de aplicación$(NC)"
-	@echo "$(GREEN)✓ Se preservará la red 'red_general'$(NC)"
+	@echo "$(GREEN)✓ Se preservarán TODAS las otras redes y recursos de Docker$(NC)"
 	@read -p "¿Estás seguro? Esta acción NO se puede deshacer [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		echo "$(YELLOW)Deteniendo y eliminando contenedores...$(NC)"; \
-		docker-compose -f $(COMPOSE_FILE) down -v --remove-orphans; \
-		echo "$(YELLOW)Eliminando volúmenes específicos...$(NC)"; \
-		docker volume rm -f $(BASE_APP_NAME)_redis_data $(BASE_APP_NAME)_node_modules_data $(BASE_APP_NAME)_nginx_cache 2>/dev/null || true; \
-		echo "$(YELLOW)Eliminando imágenes del proyecto...$(NC)"; \
-		docker images | grep "$(BASE_APP_NAME)" | awk '{print $$3}' | xargs -r docker rmi -f; \
-		echo "$(YELLOW)Eliminando red de aplicación...$(NC)"; \
-		docker network rm $(BASE_APP_NAME)_app_network 2>/dev/null || true; \
-		echo "$(YELLOW)Limpiando recursos huérfanos...$(NC)"; \
-		docker system prune -f; \
-		echo "$(GREEN)✓ Eliminación completa finalizada$(NC)"; \
-		echo "$(BLUE)Red 'red_general' preservada correctamente$(NC)"; \
+		echo "$(YELLOW)Ejecutando script de destrucción completa...$(NC)"; \
+		./scripts/destroy-app.sh $(BASE_APP_NAME); \
 	else \
 		echo "$(GREEN)Operación cancelada$(NC)"; \
 	fi
@@ -292,6 +282,10 @@ check-network: ## Verificar si la red externa existe
 		echo "$(YELLOW)Créala con: docker network create red_general$(NC)"; \
 		exit 1; \
 	fi
+
+recreate-networks: ## Recrear redes importantes (red_general, webodm_default, cloudflare_default)
+	@echo "$(YELLOW)Recreando redes importantes...$(NC)"
+	./scripts/recreate-networks.sh
 
 # === COMANDOS DE CONFIGURACIÓN ===
 rename: ## Cambiar nombre de la aplicación (usar: make rename name="nuevo-nombre")
