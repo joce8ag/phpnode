@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  # PHP-FPM service
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: sboil_php
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./app:/var/www/html
+      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/php/conf.d/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf
+    networks:
+      - app_network
+      - red_general
+    environment:
+      - PHP_IDE_CONFIG=serverName=sboil
+    depends_on:
+      - redis
+
+  # Nginx service
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    container_name: sboil_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./app:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+    networks:
+      - app_network
+    depends_on:
+      - php
+
+  # Node.js service para Vite
+  node:
+    build:
+      context: ./docker/node
+      dockerfile: Dockerfile
+    container_name: sboil_node
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - "5173:5173"  # Vite dev server
+      - "3000:3000"  # Alternative port
+    volumes:
+      - ./app:/var/www/html
+      - /var/www/html/node_modules  # Volume anónimo para node_modules
+    networks:
+      - app_network
+    environment:
+      - NODE_ENV=development
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+  # Laravel Reverb WebSocket service
+  reverb:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: sboil_reverb
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - "8080:8080"  # Puerto para WebSockets
+    volumes:
+      - ./app:/var/www/html
+      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+    networks:
+      - app_network
+      - red_general
+    environment:
+      - PHP_IDE_CONFIG=serverName=sboil-reverb
+    depends_on:
+      - php
+      - redis
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+
+  # Queue Worker service
+  queue:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: sboil_queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./app:/var/www/html
+      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+    networks:
+      - app_network
+      - red_general
+    depends_on:
+      - php
+      - redis
+    command: php artisan queue:work --sleep=3 --tries=3
+
+  # Redis service para cache y sessions
+  redis:
+    image: redis:7-alpine
+    container_name: sboil_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+    command: redis-server --appendonly yes
+
+  # Scheduler service para Laravel Cron
+  scheduler:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: sboil_scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./app:/var/www/html
+      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+    networks:
+      - app_network
+      - red_general
+    depends_on:
+      - php
+    command: sh -c "while true; do php artisan schedule:run; sleep 60; done"
+
+networks:
+  app_network:
+    driver: bridge
+  red_general:
+    external: true
+
+volumes:
+  redis_data:
+    driver: local

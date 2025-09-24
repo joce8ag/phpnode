@@ -1,0 +1,46 @@
+# Laravel
+/app/vendor/
+/app/node_modules/
+/app/public/hot
+/app/public/storage
+/app/storage/*.key
+/app/.env
+/app/.env.backup
+/app/.phpunit.result.cache
+/app/Homestead.json
+/app/Homestead.yaml
+/app/npm-debug.log
+/app/yarn-error.log
+/app/.idea
+/app/.vscode
+
+# Docker
+.env.local
+
+# Backups
+backups/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Cache
+cache/
+.cache/
+
+# Configuración local (mantener .app-config en el repo)
+# .app-config
