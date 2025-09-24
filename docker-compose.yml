@@ -28,9 +28,7 @@ services:
       dockerfile: Dockerfile
     container_name: sboil_nginx
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
+    # No exponer puertos - se usará Nginx Proxy Manager
     volumes:
       - ./app:/var/www/html
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
@@ -38,8 +36,10 @@ services:
       - ./docker/nginx/ssl:/etc/nginx/ssl
     networks:
       - app_network
+      - red_general
     depends_on:
       - php
+      - reverb
 
   # Node.js service para Vite
   node:
@@ -49,14 +49,13 @@ services:
     container_name: sboil_node
     restart: unless-stopped
     working_dir: /var/www/html
-    ports:
-      - "5173:5173"  # Vite dev server
-      - "3000:3000"  # Alternative port
+    # No exponer puertos - se usará Nginx Proxy Manager
     volumes:
       - ./app:/var/www/html
       - /var/www/html/node_modules  # Volume anónimo para node_modules
     networks:
       - app_network
+      - red_general
     environment:
       - NODE_ENV=development
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
@@ -69,8 +68,7 @@ services:
     container_name: sboil_reverb
     restart: unless-stopped
     working_dir: /var/www/html
-    ports:
-      - "8080:8080"  # Puerto para WebSockets
+    # No exponer puertos - se usará Nginx Proxy Manager
     volumes:
       - ./app:/var/www/html
       - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
@@ -108,8 +106,7 @@ services:
     image: redis:7-alpine
     container_name: sboil_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # No exponer puertos - conexión interna solamente
     volumes:
       - redis_data:/data
     networks:

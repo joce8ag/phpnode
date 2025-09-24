@@ -31,9 +31,11 @@ build: ## Construir las imágenes Docker
 up: ## Levantar todos los contenedores
 	@echo "$(YELLOW)Iniciando contenedores...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) up -d
-	@echo "$(GREEN)Aplicación disponible en: http://localhost$(NC)"
-	@echo "$(GREEN)WebSockets en: ws://localhost:8080$(NC)"
-	@echo "$(GREEN)Vite dev server en: http://localhost:5173$(NC)"
+	@echo "$(GREEN)Contenedores iniciados correctamente$(NC)"
+	@echo "$(BLUE)Configura Nginx Proxy Manager para acceder a:$(NC)"
+	@echo "$(GREEN)  - Aplicación: sboil_nginx (puerto 80)$(NC)"
+	@echo "$(GREEN)  - WebSockets: sboil_reverb (puerto 8080)$(NC)"
+	@echo "$(GREEN)  - Vite Dev: sboil_node (puerto 5173)$(NC)"
 
 down: ## Detener todos los contenedores
 	@echo "$(YELLOW)Deteniendo contenedores...$(NC)"
@@ -205,10 +207,12 @@ clean-all: ## Limpiar todo (incluyendo imágenes)
 # === COMANDOS DE INFORMACIÓN ===
 info: ## Mostrar información del entorno
 	@echo "$(BLUE)=== INFORMACIÓN DEL ENTORNO ===$(NC)"
-	@echo "$(GREEN)Aplicación:$(NC) http://localhost"
-	@echo "$(GREEN)WebSockets:$(NC) ws://localhost:8080"
-	@echo "$(GREEN)Vite Dev:$(NC) http://localhost:5173"
-	@echo "$(GREEN)Redis:$(NC) localhost:6379"
+	@echo "$(YELLOW)Puertos no expuestos - usar Nginx Proxy Manager$(NC)"
+	@echo "$(GREEN)Contenedores disponibles:$(NC)"
+	@echo "  - sboil_nginx (puerto interno 80)"
+	@echo "  - sboil_reverb (puerto interno 8080)"
+	@echo "  - sboil_node (puerto interno 5173)"
+	@echo "  - sboil_redis (puerto interno 6379)"
 	@echo ""
 	@echo "$(BLUE)=== ESTADO DE CONTENEDORES ===$(NC)"
 	@make status
