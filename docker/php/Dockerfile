@@ -52,6 +52,9 @@ RUN groupadd -g 1000 www && useradd -u 1000 -ms /bin/bash -g www www
 # Cambiar propietario del directorio de trabajo
 RUN chown -R www:www /var/www/html
 
+# Crear directorios necesarios para logs
+RUN mkdir -p /var/www/html/storage/logs && chown -R www:www /var/www/html/storage
+
 # Cambiar al usuario www
 USER www
 

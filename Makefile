@@ -51,7 +51,7 @@ logs: ## Ver logs de todos los contenedores
 	docker-compose -f $(COMPOSE_FILE) logs -f
 
 logs-php: ## Ver logs del contenedor PHP
-	docker-compose -f $(COMPOSE_FILE) logs -f $(APP_CONTAINER)
+	docker-compose -f $(COMPOSE_FILE) logs -f php
 
 logs-nginx: ## Ver logs del contenedor Nginx
 	docker-compose -f $(COMPOSE_FILE) logs -f $(NGINX_CONTAINER)
@@ -72,7 +72,7 @@ status: ## Ver estado de los contenedores
 shell: php-shell ## Acceder al shell del contenedor PHP (alias)
 
 php-shell: ## Acceder al shell del contenedor PHP
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) bash
+	docker-compose -f $(COMPOSE_FILE) exec php bash
 
 node-shell: ## Acceder al shell del contenedor Node
 	docker-compose -f $(COMPOSE_FILE) exec $(NODE_CONTAINER) sh
@@ -85,10 +85,10 @@ redis-shell: ## Acceder al shell del contenedor Redis
 
 # === COMANDOS DE PHP/LARAVEL ===
 composer: ## Ejecutar comando composer (usar: make composer cmd="install")
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) composer $(cmd)
+	docker-compose -f $(COMPOSE_FILE) exec php composer $(cmd)
 
 artisan: ## Ejecutar comando artisan (usar: make artisan cmd="migrate")
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan $(cmd)
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan $(cmd)
 
 # === COMANDOS DE NODE ===
 npm: ## Ejecutar comando npm (usar: make npm cmd="install")
@@ -107,23 +107,28 @@ npm-watch: ## Ejecutar npm run watch
 	docker-compose -f $(COMPOSE_FILE) exec $(NODE_CONTAINER) npm run watch
 
 # === INSTALACIÓN Y CONFIGURACIÓN ===
+clean-app: ## Limpiar directorio app para nueva instalación
+	@echo "$(YELLOW)Limpiando directorio app...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) exec php sh -c "rm -rf /var/www/html/* /var/www/html/.* 2>/dev/null || true"
+
 install-laravel: ## Instalar Laravel dentro del contenedor
 	@echo "$(YELLOW)Instalando Laravel...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) composer create-project laravel/laravel . --remove-vcs
+	make clean-app
+	docker-compose -f $(COMPOSE_FILE) exec php composer create-project laravel/laravel . --remove-vcs
 	@echo "$(GREEN)Laravel instalado correctamente!$(NC)"
 
 setup-env: ## Configurar archivo .env
 	@if [ ! -f "./app/.env" ]; then \
 		echo "$(YELLOW)Copiando archivo .env...$(NC)"; \
-		docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) cp .env.example .env; \
+		docker-compose -f $(COMPOSE_FILE) exec php cp .env.example .env; \
 	fi
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan key:generate
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan key:generate
 
 install-reverb: ## Instalar Laravel Reverb
 	@echo "$(YELLOW)Instalando Laravel Reverb...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) composer require laravel/reverb
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan reverb:install
+	docker-compose -f $(COMPOSE_FILE) exec php composer require laravel/reverb
 	@echo "$(GREEN)Laravel Reverb instalado correctamente!$(NC)"
+	@echo "$(YELLOW)Nota: Ejecutar manualmente 'php artisan reverb:install' si es necesario$(NC)"
 
 fresh: ## Instalación completa desde cero
 	@echo "$(YELLOW)Instalación completa...$(NC)"
@@ -139,36 +144,36 @@ fresh: ## Instalación completa desde cero
 
 # === COMANDOS DE BASE DE DATOS ===
 migrate: ## Ejecutar migraciones
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan migrate
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan migrate
 
 migrate-fresh: ## Ejecutar migraciones desde cero
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan migrate:fresh
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan migrate:fresh
 
 seed: ## Ejecutar seeders
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan db:seed
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan db:seed
 
 migrate-seed: ## Ejecutar migraciones y seeders
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan migrate:fresh --seed
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan migrate:fresh --seed
 
 # === COMANDOS DE OPTIMIZACIÓN ===
 optimize: ## Optimizar aplicación para producción
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan config:cache
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan route:cache
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan view:cache
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan config:cache
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan route:cache
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan view:cache
 	make npm-build
 
 clear-cache: ## Limpiar toda la cache
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan config:clear
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan route:clear
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan view:clear
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan cache:clear
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan config:clear
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan route:clear
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan view:clear
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan cache:clear
 
 # === COMANDOS DE TESTING ===
 test: ## Ejecutar tests
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan test
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan test
 
 test-coverage: ## Ejecutar tests con coverage
-	docker-compose -f $(COMPOSE_FILE) exec $(APP_CONTAINER) php artisan test --coverage
+	docker-compose -f $(COMPOSE_FILE) exec php php artisan test --coverage
 
 # === COMANDOS DE PRODUCCIÓN ===
 deploy-prod: ## Desplegar en producción

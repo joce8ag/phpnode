@@ -11,20 +11,17 @@ RUN apk add --no-cache \
 # Configurar directorio de trabajo
 WORKDIR /var/www/html
 
-# Crear usuario node (usar ID disponible si 1000 está ocupado)
-RUN adduser -u 1000 -s /bin/sh -D node_user 2>/dev/null || \
-    adduser -u 1001 -s /bin/sh -D node_user
+# Usar el usuario node existente (UID ya es 1000 en la imagen base de Node Alpine)
+# Cambiar propietario del directorio para el usuario node
+RUN chown -R node:node /var/www/html
 
 # Configurar npm para mejor rendimiento
 RUN npm config set fund false && \
     npm config set audit-level moderate && \
     npm install -g npm@latest
 
-# Cambiar propietario del directorio
-RUN chown -R node_user:$(id -gn node_user) /var/www/html
-
-# Cambiar al usuario node_user
-USER node_user
+# Cambiar al usuario node
+USER node
 
 # Exponer puertos para Vite
 EXPOSE 5173 3000
