@@ -6,7 +6,8 @@ services:
     build:
       context: ./docker/php
       dockerfile: Dockerfile
-    container_name: sboil_php
+    image: servidor-php8.4:latest
+    container_name: ${APP_NAME:-sboil}_php
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
@@ -26,7 +27,8 @@ services:
     build:
       context: ./docker/nginx
       dockerfile: Dockerfile
-    container_name: sboil_nginx
+    image: servidor-nginx:latest
+    container_name: ${APP_NAME:-sboil}_nginx
     restart: unless-stopped
     # No exponer puertos - se usará Nginx Proxy Manager
     volumes:
@@ -46,7 +48,8 @@ services:
     build:
       context: ./docker/node
       dockerfile: Dockerfile
-    container_name: sboil_node
+    image: servidor-node:latest
+    container_name: ${APP_NAME:-sboil}_node
     restart: unless-stopped
     working_dir: /var/www/html
     # No exponer puertos - se usará Nginx Proxy Manager
@@ -62,8 +65,8 @@ services:
 
   # Laravel Reverb WebSocket service
   reverb:
-    image: sboil-php:latest
-    container_name: sboil_reverb
+    image: servidor-php8.4:latest
+    container_name: ${APP_NAME:-sboil}_reverb
     restart: unless-stopped
     working_dir: /var/www/html
     # No exponer puertos - se usará Nginx Proxy Manager
@@ -82,8 +85,8 @@ services:
 
   # Queue Worker service
   queue:
-    image: sboil-php:latest
-    container_name: sboil_queue
+    image: servidor-php8.4:latest
+    container_name: ${APP_NAME:-sboil}_queue
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
@@ -100,7 +103,7 @@ services:
   # Redis service para cache y sessions
   redis:
     image: redis:7-alpine
-    container_name: sboil_redis
+    container_name: ${APP_NAME:-sboil}_redis
     restart: unless-stopped
     # No exponer puertos - conexión interna solamente
     volumes:
@@ -111,8 +114,8 @@ services:
 
   # Scheduler service para Laravel Cron
   scheduler:
-    image: sboil-php:latest
-    container_name: sboil_scheduler
+    image: servidor-php8.4:latest
+    container_name: ${APP_NAME:-sboil}_scheduler
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
