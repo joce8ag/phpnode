@@ -6,7 +6,13 @@
 set -e
 
 # Configuración de la aplicación base
-BASE_APP_NAME="sboil"
+# Leer el nombre desde .app-config si existe
+if [ -f ".app-config" ]; then
+    source .app-config
+    BASE_APP_NAME=$APP_NAME
+else
+    BASE_APP_NAME="sboil"
+fi
 
 # Colores para output
 RED='\033[0;31m'
@@ -58,10 +64,12 @@ if [ ! -d "./app" ]; then
     mkdir -p app
 fi
 
-# Actualizar docker-compose.yml con el nombre de la aplicación
-log_info "Configurando docker-compose.yml..."
-sed -i.bak "s/${BASE_APP_NAME}_/${APP_NAME}_/g" docker-compose.yml
-sed -i.bak "s/${BASE_APP_NAME}/${APP_NAME}/g" docker-compose.yml
+# Actualizar .app-config con el nombre de la aplicación si es diferente
+if [ "$APP_NAME" != "$BASE_APP_NAME" ]; then
+    log_info "Actualizando nombre de aplicación a: $APP_NAME"
+    sed -i.bak "s/APP_NAME=${BASE_APP_NAME}/APP_NAME=${APP_NAME}/g" .app-config
+    rm .app-config.bak
+fi
 
 # Construir imágenes
 log_info "Construyendo imágenes Docker..."
@@ -78,7 +86,7 @@ sleep 15
 # Verificar si Laravel ya está instalado
 if [ ! -f "./app/artisan" ]; then
     log_info "Instalando Laravel..."
-    docker-compose exec ${APP_NAME}_php composer create-project laravel/laravel . --remove-vcs
+    docker-compose exec php composer create-project laravel/laravel . --remove-vcs
     log_success "Laravel instalado correctamente"
 else
     log_warning "Laravel ya está instalado, omitiendo instalación"
@@ -90,42 +98,27 @@ if [ ! -f "./app/.env" ]; then
     if [ -f "./env.example" ]; then
         cp ./env.example ./app/.env
     else
-        docker-compose exec ${APP_NAME}_php cp .env.example .env
+        docker-compose exec php cp .env.example .env
     fi
 fi
 
 # Generar APP_KEY
 log_info "Generando APP_KEY..."
-docker-compose exec ${APP_NAME}_php php artisan key:generate
+docker-compose exec php php artisan key:generate
 
 # Instalar Laravel Reverb
 log_info "Instalando Laravel Reverb..."
-docker-compose exec ${APP_NAME}_php composer require laravel/reverb
-docker-compose exec ${APP_NAME}_php php artisan reverb:install --no-interaction
-
-# Configurar Reverb en .env
-log_info "Configurando Reverb en .env..."
-docker-compose exec ${APP_NAME}_php php artisan env:set BROADCAST_DRIVER=reverb
-docker-compose exec ${APP_NAME}_php php artisan env:set REVERB_APP_ID=app-id
-docker-compose exec ${APP_NAME}_php php artisan env:set REVERB_APP_KEY=app-key
-docker-compose exec ${APP_NAME}_php php artisan env:set REVERB_APP_SECRET=app-secret
-docker-compose exec ${APP_NAME}_php php artisan env:set REVERB_HOST=localhost
-docker-compose exec ${APP_NAME}_php php artisan env:set REVERB_PORT=8080
-docker-compose exec ${APP_NAME}_php php artisan env:set REVERB_SCHEME=http
-
-# Configurar Redis
-log_info "Configurando Redis..."
-docker-compose exec ${APP_NAME}_php php artisan env:set CACHE_DRIVER=redis
-docker-compose exec ${APP_NAME}_php php artisan env:set SESSION_DRIVER=redis
-docker-compose exec ${APP_NAME}_php php artisan env:set QUEUE_CONNECTION=redis
+docker-compose exec php composer require laravel/reverb
+docker-compose exec php php artisan reverb:install --no-interaction
 
 # Instalar dependencias npm
 log_info "Instalando dependencias npm..."
-docker-compose exec ${APP_NAME}_node npm install
+docker-compose exec node npm install
 
-# Publicar configuración de Reverb
-log_info "Publicando configuración de Reverb..."
-docker-compose exec ${APP_NAME}_php php artisan vendor:publish --provider="Laravel\Reverb\ReverbServiceProvider" --tag="reverb-config"
+# Configurar permisos
+log_info "Configurando permisos..."
+docker-compose exec php chown -R www:www /var/www/html/storage
+docker-compose exec php chown -R www:www /var/www/html/bootstrap/cache
 
 # Reiniciar contenedores para aplicar cambios
 log_info "Reiniciando contenedores..."

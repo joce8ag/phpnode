@@ -62,14 +62,15 @@ mkdir -p $BACKUP_DIR
 
 log_info "Creando backup antes de la actualización..."
 tar -czf "$BACKUP_DIR/pre-rename-$TIMESTAMP.tar.gz" \
+    --exclude=backups \
     docker-compose.yml \
     docker-compose.production.yml \
     Makefile \
     scripts/ \
+    docker/ \
     .app-config \
     env.example \
-    env.production \
-    --exclude=backups/
+    env.production
 
 log_success "Backup creado: $BACKUP_DIR/pre-rename-$TIMESTAMP.tar.gz"
 
@@ -95,6 +96,11 @@ fi
 # Actualizar Makefile
 log_info "Actualizando Makefile..."
 sed -i.bak "s/BASE_APP_NAME=$CURRENT_APP_NAME/BASE_APP_NAME=$NEW_APP_NAME/g" Makefile
+# Actualizar también las variables que usan BASE_APP_NAME (aunque no las usemos más)
+sed -i.bak "s/APP_CONTAINER=\$(BASE_APP_NAME)_php/APP_CONTAINER=\$(BASE_APP_NAME)_php/g" Makefile
+sed -i.bak "s/NODE_CONTAINER=\$(BASE_APP_NAME)_node/NODE_CONTAINER=\$(BASE_APP_NAME)_node/g" Makefile
+sed -i.bak "s/NGINX_CONTAINER=\$(BASE_APP_NAME)_nginx/NGINX_CONTAINER=\$(BASE_APP_NAME)_nginx/g" Makefile
+sed -i.bak "s/REDIS_CONTAINER=\$(BASE_APP_NAME)_redis/REDIS_CONTAINER=\$(BASE_APP_NAME)_redis/g" Makefile
 rm Makefile.bak
 
 # Actualizar scripts
@@ -105,6 +111,14 @@ for script in scripts/*.sh; do
         rm "$script.bak"
     fi
 done
+
+# Actualizar configuraciones de Docker
+if [ -f "docker/nginx/conf.d/laravel.conf" ]; then
+    log_info "Actualizando configuración de nginx..."
+    sed -i.bak "s/${CURRENT_APP_NAME}\.local/${NEW_APP_NAME}\.local/g" docker/nginx/conf.d/laravel.conf
+    sed -i.bak "s/\*\.${CURRENT_APP_NAME}\.local/\*\.${NEW_APP_NAME}\.local/g" docker/nginx/conf.d/laravel.conf
+    rm docker/nginx/conf.d/laravel.conf.bak
+fi
 
 # Actualizar archivos de entorno
 if [ -f "env.example" ]; then
@@ -134,15 +148,16 @@ fi
 # Crear backup post-actualización
 log_info "Creando backup post-actualización..."
 tar -czf "$BACKUP_DIR/post-rename-$TIMESTAMP.tar.gz" \
+    --exclude=backups \
     docker-compose.yml \
     docker-compose.production.yml \
     Makefile \
     scripts/ \
+    docker/ \
     .app-config \
     env.example \
     env.production \
-    README.md \
-    --exclude=backups/
+    README.md
 
 log_success "Backup post-actualización creado: $BACKUP_DIR/post-rename-$TIMESTAMP.tar.gz"
 
@@ -160,6 +175,7 @@ echo "  - docker-compose.yml"
 echo "  - docker-compose.production.yml (si existe)"
 echo "  - Makefile"
 echo "  - scripts/*.sh"
+echo "  - docker/nginx/conf.d/laravel.conf (si existe)"
 echo "  - env.example (si existe)"
 echo "  - env.production (si existe)"
 echo "  - README.md (si existe)"

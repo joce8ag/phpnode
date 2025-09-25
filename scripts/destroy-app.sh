@@ -68,10 +68,8 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}3. Eliminando volúmenes específicos...${NC}"
     docker volume rm -f \
         "${BASE_APP_NAME}_redis_data" \
-        "${BASE_APP_NAME}_node_modules_data" \
         "${BASE_APP_NAME}_nginx_cache" \
         redis_data \
-        node_modules_data \
         nginx_cache \
         2>/dev/null || true
 

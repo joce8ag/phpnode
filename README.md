@@ -11,8 +11,8 @@ Una plantilla completa de Docker para desarrollar y desplegar aplicaciones Larav
 - **Redis** para cache, sesiones y colas
 - **Queue Workers** para procesamiento en background
 - **Scheduler** para tareas programadas (cron)
-- **Estructura modular** fácil de replicar
-- **Scripts de automatización** para desarrollo y producción
+- **Estructura modular** fácil de replicar con script interactivo
+- **Scripts de automatización** para desarrollo, producción y creación de nuevas apps
 - **Makefile** con comandos abreviados y limpieza automática
 - **Compatible con Nginx Proxy Manager** (puertos no expuestos)
 
@@ -53,7 +53,19 @@ docker network create red_general
 
 ## 🛠️ Instalación Rápida
 
-### Opción 1: Instalación automática completa
+### Opción 1: Crear nueva aplicación desde plantilla existente 🎯
+
+```bash
+# Si ya tienes la plantilla sboil/, crea una nueva app:
+cd sboil/
+./scripts/copy-template.sh    # Script interactivo
+# Te pregunta el nombre y crea la nueva app al mismo nivel
+
+cd ../mi-nueva-app/
+make fresh                    # Instalación automática
+```
+
+### Opción 2: Instalación manual completa
 
 ```bash
 # Clonar o copiar esta plantilla
@@ -64,7 +76,7 @@ cd mi-nueva-app
 make fresh
 ```
 
-### Opción 2: Instalación manual paso a paso (RECOMENDADO)
+### Opción 3: Instalación manual paso a paso (RECOMENDADO)
 
 ```bash
 # 1. Construir imágenes
@@ -86,7 +98,7 @@ make install-reverb
 make npm-install
 ```
 
-### Opción 3: Usando script de inicialización
+### Opción 4: Usando script de inicialización
 
 ```bash
 # Ejecutar instalación completa
@@ -344,19 +356,46 @@ make rename name="mi-nueva-app"
 
 ### Crear Nueva Aplicación desde Plantilla
 
+#### 🎯 Modo Interactivo (Recomendado)
+
 ```bash
-# Usando make (recomendado)
+# Script interactivo - te pregunta todo lo necesario
+./scripts/copy-template.sh
+
+# El script te preguntará:
+# 🚀 Nombre de la nueva aplicación: mi-nueva-app
+# 📁 Directorio destino (presiona Enter para '../'): [Enter]
+
+# Resultado: crea la nueva app al mismo nivel que sboil/
+# /Users/tu-usuario/Proyectos/php/aplicaciones/
+# ├── sboil/           # 👈 Plantilla original
+# └── mi-nueva-app/    # 👈 Nueva aplicación creada
+```
+
+#### ⚡ Modo Manual
+
+```bash
+# Usando make
 make copy-template name="mi-nueva-app" dir="../"
 
-# O usando script directamente
-./scripts/copy-template.sh mi-nueva-app /ruta/destino/
+# O usando script directamente con argumentos
+./scripts/copy-template.sh mi-nueva-app ../
 
-# Ir al nuevo directorio
-cd /ruta/destino/mi-nueva-app
-
-# Inicializar nueva aplicación
+# Ir al nuevo directorio e inicializar
+cd ../mi-nueva-app
 make build && make up && make install-laravel
 ```
+
+#### 📋 Resultado del Script
+
+El script automáticamente:
+- ✅ **Copia** toda la estructura Docker y configuraciones
+- ✅ **Personaliza** nombres en todos los archivos
+- ✅ **Actualiza** docker-compose.yml, Makefile, .app-config
+- ✅ **Crea** README.md personalizado para la nueva app
+- ✅ **Preserva** README original como README-original.md
+- ✅ **Configura** permisos ejecutables en scripts
+- ✅ **Genera** .gitignore apropiado
 
 ## 🔍 Monitoreo y Logs
 

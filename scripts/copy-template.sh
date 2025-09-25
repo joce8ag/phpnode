@@ -6,7 +6,13 @@
 set -e
 
 # Configuración de la aplicación base
-BASE_APP_NAME="sboil"
+# Leer el nombre desde .app-config si existe
+if [ -f ".app-config" ]; then
+    source .app-config
+    BASE_APP_NAME=$APP_NAME
+else
+    BASE_APP_NAME="sboil"
+fi
 
 # Colores para output
 RED='\033[0;31m'
@@ -32,15 +38,32 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Verificar argumentos
+# Obtener nombre de la aplicación
 if [ $# -lt 1 ]; then
-    log_error "Uso: $0 <nombre_nueva_aplicacion> [directorio_destino]"
-    log_info "Ejemplo: $0 mi-nueva-app /ruta/a/proyectos/"
+    echo ""
+    log_info "=== Creador de Nueva Aplicación ==="
+    echo ""
+    read -p "🚀 Nombre de la nueva aplicación: " NEW_APP_NAME
+
+    if [ -z "$NEW_APP_NAME" ]; then
+        log_error "El nombre de la aplicación no puede estar vacío"
+        exit 1
+    fi
+
+    echo ""
+    read -p "📁 Directorio destino (presiona Enter para '../'): " DEST_DIR
+    DEST_DIR=${DEST_DIR:-"../"}
+else
+    NEW_APP_NAME=$1
+    DEST_DIR=${2:-"../"}
+fi
+
+# Validar nombre de aplicación
+if [[ ! $NEW_APP_NAME =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    log_error "El nombre de la aplicación solo puede contener letras, números, guiones y guiones bajos"
     exit 1
 fi
 
-NEW_APP_NAME=$1
-DEST_DIR=${2:-"../"}
 CURRENT_DIR=$(pwd)
 NEW_APP_DIR="$DEST_DIR/$NEW_APP_NAME"
 
@@ -49,29 +72,63 @@ log_info "Directorio destino: $NEW_APP_DIR"
 
 # Verificar que no existe el directorio destino
 if [ -d "$NEW_APP_DIR" ]; then
-    log_error "El directorio '$NEW_APP_DIR' ya existe"
-    read -p "¿Deseas continuar y sobrescribir? [y/N] " -n 1 -r
-    echo
+    echo ""
+    log_warning "⚠️  El directorio '$NEW_APP_DIR' ya existe"
+    echo ""
+    echo "Contenido actual:"
+    ls -la "$NEW_APP_DIR" | head -5
+    echo ""
+    read -p "❌ ¿Deseas ELIMINAR todo el contenido y continuar? [y/N]: " -n 1 -r
+    echo ""
+
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_info "Operación cancelada"
+        log_info "✅ Operación cancelada por el usuario"
         exit 1
     fi
-    log_warning "Sobrescribiendo directorio existente..."
+
+    echo ""
+    log_warning "🗑️  Eliminando directorio existente..."
     rm -rf "$NEW_APP_DIR"
+    log_success "✅ Directorio eliminado correctamente"
 fi
 
 # Crear directorio base
-log_info "Creando estructura de directorios..."
+echo ""
+log_info "📁 Creando estructura de directorios..."
 mkdir -p "$NEW_APP_DIR"
 
 # Copiar archivos y directorios necesarios (excluyendo app/ y backups/)
-log_info "Copiando archivos de plantilla..."
+echo ""
+log_info "📋 Copiando archivos de plantilla..."
+echo ""
+
+log_info "   🐳 Copiando configuración Docker..."
 cp -r docker/ "$NEW_APP_DIR/"
+
+log_info "   🔧 Copiando docker-compose.yml..."
 cp docker-compose.yml "$NEW_APP_DIR/"
+
+if [ -f "docker-compose.production.yml" ]; then
+    log_info "   🚀 Copiando docker-compose.production.yml..."
+    cp docker-compose.production.yml "$NEW_APP_DIR/"
+fi
+
+log_info "   ⚙️  Copiando Makefile..."
 cp Makefile "$NEW_APP_DIR/"
+
+log_info "   📜 Copiando scripts..."
 cp -r scripts/ "$NEW_APP_DIR/"
 
+log_info "   🔐 Copiando .app-config..."
+cp .app-config "$NEW_APP_DIR/"
+
+if [ -f "README.md" ]; then
+    log_info "   📖 Copiando README original..."
+    cp README.md "$NEW_APP_DIR/README-original.md"
+fi
+
 # Copiar archivos de configuración
+log_info "   🌱 Copiando archivos de entorno..."
 if [ -f "env.example" ]; then
     cp env.example "$NEW_APP_DIR/"
 fi
@@ -81,10 +138,12 @@ if [ -f "env.production" ]; then
 fi
 
 # Crear directorio app vacío
+log_info "   📱 Creando directorio app..."
 mkdir -p "$NEW_APP_DIR/app"
 
 # Crear archivo .gitignore
-log_info "Creando archivo .gitignore..."
+echo ""
+log_info "📝 Creando archivo .gitignore..."
 cat > "$NEW_APP_DIR/.gitignore" << EOF
 # Laravel
 /app/vendor/
@@ -123,47 +182,61 @@ Thumbs.db
 EOF
 
 # Actualizar nombres en docker-compose.yml
-log_info "Actualizando configuración para $NEW_APP_NAME..."
+echo ""
+log_info "🔄 Personalizando archivos para '$NEW_APP_NAME'..."
+echo ""
+log_info "   🐳 Actualizando docker-compose.yml..."
 sed -i.bak "s/${BASE_APP_NAME}_/${NEW_APP_NAME}_/g" "$NEW_APP_DIR/docker-compose.yml"
 sed -i.bak "s/${BASE_APP_NAME}/${NEW_APP_NAME}/g" "$NEW_APP_DIR/docker-compose.yml"
 rm "$NEW_APP_DIR/docker-compose.yml.bak"
 
 # Actualizar docker-compose.production.yml si existe
 if [ -f "$NEW_APP_DIR/docker-compose.production.yml" ]; then
+    log_info "   🚀 Actualizando docker-compose.production.yml..."
     sed -i.bak "s/${BASE_APP_NAME}_/${NEW_APP_NAME}_/g" "$NEW_APP_DIR/docker-compose.production.yml"
     sed -i.bak "s/${BASE_APP_NAME}/${NEW_APP_NAME}/g" "$NEW_APP_DIR/docker-compose.production.yml"
     rm "$NEW_APP_DIR/docker-compose.production.yml.bak"
 fi
 
 # Actualizar Makefile
-sed -i.bak "s/${BASE_APP_NAME}_/${NEW_APP_NAME}_/g" "$NEW_APP_DIR/Makefile"
-sed -i.bak "s/APP_CONTAINER=${BASE_APP_NAME}_php/APP_CONTAINER=${NEW_APP_NAME}_php/g" "$NEW_APP_DIR/Makefile"
-sed -i.bak "s/NODE_CONTAINER=${BASE_APP_NAME}_node/NODE_CONTAINER=${NEW_APP_NAME}_node/g" "$NEW_APP_DIR/Makefile"
-sed -i.bak "s/NGINX_CONTAINER=${BASE_APP_NAME}_nginx/NGINX_CONTAINER=${NEW_APP_NAME}_nginx/g" "$NEW_APP_DIR/Makefile"
-sed -i.bak "s/REDIS_CONTAINER=${BASE_APP_NAME}_redis/REDIS_CONTAINER=${NEW_APP_NAME}_redis/g" "$NEW_APP_DIR/Makefile"
+log_info "   ⚙️  Actualizando Makefile..."
+sed -i.bak "s/BASE_APP_NAME=${BASE_APP_NAME}/BASE_APP_NAME=${NEW_APP_NAME}/g" "$NEW_APP_DIR/Makefile"
 rm "$NEW_APP_DIR/Makefile.bak"
 
-# Actualizar script de inicialización
-sed -i.bak "s/APP_NAME=\${1:-\"${BASE_APP_NAME}\"}/APP_NAME=\${1:-\"$NEW_APP_NAME\"}/g" "$NEW_APP_DIR/scripts/init.sh"
-rm "$NEW_APP_DIR/scripts/init.sh.bak"
+# Actualizar .app-config
+log_info "   🔐 Actualizando .app-config..."
+sed -i.bak "s/APP_NAME=${BASE_APP_NAME}/APP_NAME=${NEW_APP_NAME}/g" "$NEW_APP_DIR/.app-config"
+rm "$NEW_APP_DIR/.app-config.bak"
+
+# Actualizar configuraciones de Docker
+if [ -f "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf" ]; then
+    log_info "   🌐 Actualizando configuración Nginx..."
+    sed -i.bak "s/${BASE_APP_NAME}\.local/${NEW_APP_NAME}\.local/g" "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf"
+    sed -i.bak "s/\*\.${BASE_APP_NAME}\.local/\*\.${NEW_APP_NAME}\.local/g" "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf"
+    rm "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf.bak"
+fi
 
 # Actualizar archivos de entorno
 if [ -f "$NEW_APP_DIR/env.example" ]; then
+    log_info "   🌱 Actualizando env.example..."
     sed -i.bak "s/APP_NAME=SBoil/APP_NAME=$NEW_APP_NAME/g" "$NEW_APP_DIR/env.example"
     rm "$NEW_APP_DIR/env.example.bak"
 fi
 
 if [ -f "$NEW_APP_DIR/env.production" ]; then
+    log_info "   🏭 Actualizando env.production..."
     sed -i.bak "s/APP_NAME=SBoil/APP_NAME=$NEW_APP_NAME/g" "$NEW_APP_DIR/env.production"
     rm "$NEW_APP_DIR/env.production.bak"
 fi
 
 # Hacer scripts ejecutables
-log_info "Configurando permisos de scripts..."
+echo ""
+log_info "🔧 Configurando permisos de scripts..."
 chmod +x "$NEW_APP_DIR/scripts/"*.sh
 
 # Crear README.md para la nueva aplicación
-log_info "Creando README.md..."
+echo ""
+log_info "📚 Creando README.md personalizado..."
 cat > "$NEW_APP_DIR/README.md" << EOF
 # $NEW_APP_NAME
 
@@ -235,10 +308,11 @@ make test
 ## Puertos
 
 - **80**: Aplicación web (HTTP)
-- **443**: Aplicación web (HTTPS)
 - **8080**: Laravel Reverb (WebSockets)
 - **5173**: Vite dev server
 - **6379**: Redis
+
+> **Nota:** Para HTTPS/SSL usar Nginx Proxy Manager u otro proxy reverso.
 
 ## Estructura
 
@@ -282,18 +356,32 @@ Para crear una nueva aplicación basada en esta plantilla:
 Para más información sobre comandos disponibles: \`make help\`
 EOF
 
-log_success "¡Plantilla copiada exitosamente!"
 echo ""
-log_info "Nueva aplicación creada en: $NEW_APP_DIR"
+echo "════════════════════════════════════════════════════════════════"
+log_success "🎉 ¡PLANTILLA COPIADA EXITOSAMENTE! 🎉"
+echo "════════════════════════════════════════════════════════════════"
 echo ""
-log_info "Próximos pasos:"
-echo "  1. cd $NEW_APP_DIR"
-echo "  2. ./scripts/init.sh    # Para instalación completa automática"
-echo "  3. make dev             # Para iniciar desarrollo"
+log_info "📍 Nueva aplicación creada en:"
+echo "   $NEW_APP_DIR"
 echo ""
-log_info "Comandos útiles:"
-echo "  make help               # Ver todos los comandos disponibles"
-echo "  make logs               # Ver logs en tiempo real"
-echo "  make shell              # Acceder al contenedor PHP"
+log_info "📁 Archivos importantes creados:"
+echo "   📖 README.md                 - Documentación de la nueva aplicación"
+echo "   📘 README-original.md        - Documentación original de la plantilla"
+echo "   🔐 .app-config              - Configuración de la aplicación"
+echo "   🐳 docker-compose.yml       - Configuración Docker"
+echo "   ⚙️  Makefile                - Comandos automatizados"
 echo ""
-log_success "¡La nueva aplicación $NEW_APP_NAME está lista!"
+log_info "🚀 PRÓXIMOS PASOS:"
+echo "   1️⃣  cd $NEW_APP_DIR"
+echo "   2️⃣  ./scripts/init.sh         # Instalación completa automática"
+echo "   3️⃣  make dev                  # Iniciar desarrollo"
+echo ""
+log_info "🛠️  COMANDOS ÚTILES:"
+echo "   📋 make help                  # Ver todos los comandos disponibles"
+echo "   📊 make logs                  # Ver logs en tiempo real"
+echo "   🐚 make shell                 # Acceder al contenedor PHP"
+echo "   🔧 make artisan cmd=\"...\"     # Ejecutar comandos artisan"
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+log_success "✨ ¡La aplicación '$NEW_APP_NAME' está lista para usar! ✨"
+echo "════════════════════════════════════════════════════════════════"

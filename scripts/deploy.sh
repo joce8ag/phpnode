@@ -6,7 +6,13 @@
 set -e
 
 # Configuración de la aplicación base
-BASE_APP_NAME="sboil"
+# Leer el nombre desde .app-config si existe
+if [ -f ".app-config" ]; then
+    source .app-config
+    BASE_APP_NAME=$APP_NAME
+else
+    BASE_APP_NAME="sboil"
+fi
 
 # Colores para output
 RED='\033[0;31m'
@@ -132,7 +138,6 @@ log_info "Optimizando aplicación..."
 docker-compose exec -T php php artisan config:cache
 docker-compose exec -T php php artisan route:cache
 docker-compose exec -T php php artisan view:cache
-docker-compose exec -T php php artisan event:cache
 
 # Limpiar cachés antiguos
 log_info "Limpiando cachés..."
