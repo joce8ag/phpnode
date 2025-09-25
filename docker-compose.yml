@@ -62,9 +62,7 @@ services:
 
   # Laravel Reverb WebSocket service
   reverb:
-    build:
-      context: ./docker/php
-      dockerfile: Dockerfile
+    image: sboil-php:latest
     container_name: sboil_reverb
     restart: unless-stopped
     working_dir: /var/www/html
@@ -84,9 +82,7 @@ services:
 
   # Queue Worker service
   queue:
-    build:
-      context: ./docker/php
-      dockerfile: Dockerfile
+    image: sboil-php:latest
     container_name: sboil_queue
     restart: unless-stopped
     working_dir: /var/www/html
@@ -115,9 +111,7 @@ services:
 
   # Scheduler service para Laravel Cron
   scheduler:
-    build:
-      context: ./docker/php
-      dockerfile: Dockerfile
+    image: sboil-php:latest
     container_name: sboil_scheduler
     restart: unless-stopped
     working_dir: /var/www/html
