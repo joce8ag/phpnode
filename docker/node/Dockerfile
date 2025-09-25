@@ -11,8 +11,9 @@ RUN apk add --no-cache \
 # Configurar directorio de trabajo
 WORKDIR /var/www/html
 
-# Crear usuario node
-RUN addgroup -g 1000 node_group && adduser -u 1000 -G node_group -s /bin/sh -D node_user
+# Crear usuario node (usar ID disponible si 1000 está ocupado)
+RUN adduser -u 1000 -s /bin/sh -D node_user 2>/dev/null || \
+    adduser -u 1001 -s /bin/sh -D node_user
 
 # Configurar npm para mejor rendimiento
 RUN npm config set fund false && \
@@ -20,7 +21,7 @@ RUN npm config set fund false && \
     npm install -g npm@latest
 
 # Cambiar propietario del directorio
-RUN chown -R node_user:node_group /var/www/html
+RUN chown -R node_user:$(id -gn node_user) /var/www/html
 
 # Cambiar al usuario node_user
 USER node_user

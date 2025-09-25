@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libgd-dev \
     libcurl4-openssl-dev \
     libssl-dev \
+    libicu-dev \
     supervisor \
     cron \
     && rm -rf /var/lib/apt/lists/*
