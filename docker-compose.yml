@@ -80,7 +80,7 @@ services:
     depends_on:
       - php
       - redis
-    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    command: sh -c "while ! php artisan --version > /dev/null 2>&1; do echo 'Esperando Laravel...' && sleep 5; done && echo 'Laravel listo, iniciando Reverb...' && php artisan reverb:start --host=0.0.0.0 --port=8080"
 
   # Queue Worker service
   queue:
@@ -97,7 +97,7 @@ services:
     depends_on:
       - php
       - redis
-    command: php artisan queue:work --sleep=3 --tries=3
+    command: sh -c "while ! php artisan --version > /dev/null 2>&1; do echo 'Esperando Laravel...' && sleep 5; done && echo 'Laravel listo, iniciando queue worker...' && php artisan queue:work --sleep=3 --tries=3"
 
   # Redis service para cache y sessions
   redis:
@@ -125,7 +125,7 @@ services:
       - red_general
     depends_on:
       - php
-    command: sh -c "while true; do php artisan schedule:run; sleep 60; done"
+    command: sh -c "while ! php artisan --version > /dev/null 2>&1; do echo 'Esperando Laravel...' && sleep 5; done && echo 'Laravel listo, iniciando scheduler...' && while true; do php artisan schedule:run; sleep 60; done"
 
 networks:
   app_network:

@@ -54,16 +54,16 @@ logs-php: ## Ver logs del contenedor PHP
 	docker-compose -f $(COMPOSE_FILE) logs -f php
 
 logs-nginx: ## Ver logs del contenedor Nginx
-	docker-compose -f $(COMPOSE_FILE) logs -f $(NGINX_CONTAINER)
+	docker-compose -f $(COMPOSE_FILE) logs -f nginx
 
 logs-node: ## Ver logs del contenedor Node
-	docker-compose -f $(COMPOSE_FILE) logs -f $(NODE_CONTAINER)
+	docker-compose -f $(COMPOSE_FILE) logs -f node
 
 logs-reverb: ## Ver logs del contenedor Reverb
-	docker-compose -f $(COMPOSE_FILE) logs -f sboil_reverb
+	docker-compose -f $(COMPOSE_FILE) logs -f reverb
 
 logs-queue: ## Ver logs del contenedor Queue
-	docker-compose -f $(COMPOSE_FILE) logs -f sboil_queue
+	docker-compose -f $(COMPOSE_FILE) logs -f queue
 
 status: ## Ver estado de los contenedores
 	docker-compose -f $(COMPOSE_FILE) ps
@@ -75,13 +75,13 @@ php-shell: ## Acceder al shell del contenedor PHP
 	docker-compose -f $(COMPOSE_FILE) exec php bash
 
 node-shell: ## Acceder al shell del contenedor Node
-	docker-compose -f $(COMPOSE_FILE) exec $(NODE_CONTAINER) sh
+	docker-compose -f $(COMPOSE_FILE) exec node sh
 
 nginx-shell: ## Acceder al shell del contenedor Nginx
-	docker-compose -f $(COMPOSE_FILE) exec $(NGINX_CONTAINER) sh
+	docker-compose -f $(COMPOSE_FILE) exec nginx sh
 
 redis-shell: ## Acceder al shell del contenedor Redis
-	docker-compose -f $(COMPOSE_FILE) exec $(REDIS_CONTAINER) redis-cli
+	docker-compose -f $(COMPOSE_FILE) exec redis redis-cli
 
 # === COMANDOS DE PHP/LARAVEL ===
 composer: ## Ejecutar comando composer (usar: make composer cmd="install")
@@ -92,19 +92,19 @@ artisan: ## Ejecutar comando artisan (usar: make artisan cmd="migrate")
 
 # === COMANDOS DE NODE ===
 npm: ## Ejecutar comando npm (usar: make npm cmd="install")
-	docker-compose -f $(COMPOSE_FILE) exec $(NODE_CONTAINER) npm $(cmd)
+	docker-compose -f $(COMPOSE_FILE) exec node npm $(cmd)
 
 npm-install: ## Instalar dependencias npm
-	docker-compose -f $(COMPOSE_FILE) exec $(NODE_CONTAINER) npm install
+	docker-compose -f $(COMPOSE_FILE) exec node npm install
 
 npm-dev: ## Ejecutar npm run dev
-	docker-compose -f $(COMPOSE_FILE) exec $(NODE_CONTAINER) npm run dev
+	docker-compose -f $(COMPOSE_FILE) exec node npm run dev
 
 npm-build: ## Ejecutar npm run build
-	docker-compose -f $(COMPOSE_FILE) exec $(NODE_CONTAINER) npm run build
+	docker-compose -f $(COMPOSE_FILE) exec node npm run build
 
 npm-watch: ## Ejecutar npm run watch
-	docker-compose -f $(COMPOSE_FILE) exec $(NODE_CONTAINER) npm run watch
+	docker-compose -f $(COMPOSE_FILE) exec node npm run watch
 
 # === INSTALACIÓN Y CONFIGURACIÓN ===
 clean-app: ## Limpiar directorio app para nueva instalación
@@ -248,21 +248,21 @@ dev: ## Iniciar entorno de desarrollo
 
 watch: ## Iniciar watchers para desarrollo
 	@echo "$(YELLOW)Iniciando watchers...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) exec -d $(NODE_CONTAINER) npm run watch
+	docker-compose -f $(COMPOSE_FILE) exec -d node npm run watch
 
 # === COMANDOS DE REVERB ===
 reverb-restart: ## Reiniciar servidor Reverb
-	docker-compose -f $(COMPOSE_FILE) restart $(BASE_APP_NAME)_reverb
+	docker-compose -f $(COMPOSE_FILE) restart reverb
 
 reverb-logs: ## Ver logs de Reverb
-	docker-compose -f $(COMPOSE_FILE) logs -f $(BASE_APP_NAME)_reverb
+	docker-compose -f $(COMPOSE_FILE) logs -f reverb
 
 # === COMANDOS DE QUEUE ===
 queue-restart: ## Reiniciar workers de queue
-	docker-compose -f $(COMPOSE_FILE) restart $(BASE_APP_NAME)_queue
+	docker-compose -f $(COMPOSE_FILE) restart queue
 
 queue-logs: ## Ver logs de queue
-	docker-compose -f $(COMPOSE_FILE) logs -f $(BASE_APP_NAME)_queue
+	docker-compose -f $(COMPOSE_FILE) logs -f queue
 
 # === COMANDOS DE RED ===
 network-info: ## Mostrar información de red
