@@ -1,138 +1,32 @@
 services:
-  # PHP-FPM service
-  php:
+  # Servicio unificado: PHP + Nginx + Node.js + Redis
+  app:
     build:
-      context: ./docker/php
+      context: .
       dockerfile: Dockerfile
-    image: servidor-php8.4:latest
-    container_name: ${APP_NAME:-sboil}_php
+    image: webapp:latest
+    container_name: ${APP_NAME:-sboil}_app
     restart: unless-stopped
     working_dir: /var/www/html
+    # Sin puertos expuestos - usar Nginx Proxy Manager
+    # ports:
+    #   - "80:80"     # Nginx (manejado por Nginx Proxy Manager)
+    #   - "5173:5173" # Vite (solo para desarrollo local)
     volumes:
       - ./app:/var/www/html
+      - ./docker/nginx/conf.d/laravel.conf:/etc/nginx/sites-available/default
       - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
       - ./docker/php/conf.d/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
     networks:
       - app_network
       - red_general
     environment:
       - PHP_IDE_CONFIG=serverName=sboil
-    depends_on:
-      - redis
-
-  # Nginx service
-  nginx:
-    build:
-      context: ./docker/nginx
-      dockerfile: Dockerfile
-    image: servidor-nginx:latest
-    container_name: ${APP_NAME:-sboil}_nginx
-    restart: unless-stopped
-    # No exponer puertos - se usará Nginx Proxy Manager
-    volumes:
-      - ./app:/var/www/html
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./docker/nginx/ssl:/etc/nginx/ssl
-    networks:
-      - app_network
-      - red_general
-    depends_on:
-      - php
-      - reverb
-
-  # Node.js service para Vite
-  node:
-    build:
-      context: ./docker/node
-      dockerfile: Dockerfile
-    image: servidor-node:latest
-    container_name: ${APP_NAME:-sboil}_node
-    restart: unless-stopped
-    working_dir: /var/www/html
-    # No exponer puertos - se usará Nginx Proxy Manager
-    volumes:
-      - ./app:/var/www/html
-    networks:
-      - app_network
-      - red_general
-    environment:
       - NODE_ENV=development
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    depends_on:
-      - php
-
-  # Laravel Reverb WebSocket service
-  reverb:
-    image: servidor-php8.4:latest
-    container_name: ${APP_NAME:-sboil}_reverb
-    restart: unless-stopped
-    working_dir: /var/www/html
-    # No exponer puertos - se usará Nginx Proxy Manager
-    volumes:
-      - ./app:/var/www/html
-      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
-    networks:
-      - app_network
-      - red_general
-    environment:
-      - PHP_IDE_CONFIG=serverName=sboil-reverb
-    depends_on:
-      - php
-      - redis
-    command: sh -c "while ! php artisan --version > /dev/null 2>&1; do echo 'Esperando Laravel...' && sleep 5; done && echo 'Laravel listo, iniciando Reverb...' && php artisan reverb:start --host=0.0.0.0 --port=8080"
-
-  # Queue Worker service
-  queue:
-    image: servidor-php8.4:latest
-    container_name: ${APP_NAME:-sboil}_queue
-    restart: unless-stopped
-    working_dir: /var/www/html
-    volumes:
-      - ./app:/var/www/html
-      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
-    networks:
-      - app_network
-      - red_general
-    depends_on:
-      - php
-      - redis
-    command: sh -c "while ! php artisan --version > /dev/null 2>&1; do echo 'Esperando Laravel...' && sleep 5; done && echo 'Laravel listo, iniciando queue worker...' && php artisan queue:work --sleep=3 --tries=3"
-
-  # Redis service para cache y sessions
-  redis:
-    image: redis:7-alpine
-    container_name: ${APP_NAME:-sboil}_redis
-    restart: unless-stopped
-    # No exponer puertos - conexión interna solamente
-    volumes:
-      - redis_data:/data
-    networks:
-      - app_network
-    command: redis-server --appendonly yes
-
-  # Scheduler service para Laravel Cron
-  scheduler:
-    image: servidor-php8.4:latest
-    container_name: ${APP_NAME:-sboil}_scheduler
-    restart: unless-stopped
-    working_dir: /var/www/html
-    volumes:
-      - ./app:/var/www/html
-      - ./docker/php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
-    networks:
-      - app_network
-      - red_general
-    depends_on:
-      - php
-    command: sh -c "while ! php artisan --version > /dev/null 2>&1; do echo 'Esperando Laravel...' && sleep 5; done && echo 'Laravel listo, iniciando scheduler...' && while true; do php artisan schedule:run; sleep 60; done"
 
 networks:
   app_network:
     driver: bridge
   red_general:
     external: true
-
-volumes:
-  redis_data:
-    driver: local
