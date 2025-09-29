@@ -168,8 +168,11 @@ make npm-install
 # Ver todos los comandos disponibles
 make help
 
-# Iniciar entorno de desarrollo
+# Iniciar entorno de desarrollo (sin Vite)
 make dev
+
+# Iniciar entorno de desarrollo con Vite
+make dev-with-vite
 
 # Ver logs en tiempo real
 make logs
@@ -223,6 +226,26 @@ make npm-build
 make npm cmd="install lodash"
 ```
 
+### Comandos de Vite (Desarrollo Frontend)
+
+```bash
+# Ver logs de Vite
+make logs-node
+
+# Acceder al shell del contenedor Node
+make node-shell
+
+# Iniciar watchers para desarrollo
+make watch
+
+# Comandos npm específicos para Vite
+make npm-dev    # npm run dev
+make npm-build  # npm run build
+make npm-watch  # npm run watch
+```
+
+**Nota:** Vite solo está disponible cuando usas `make dev-with-vite` o cuando el contenedor `node` está ejecutándose.
+
 ### Comandos de servicios
 
 ```bash
@@ -265,7 +288,9 @@ sboil/
 │   ├── nginx/             # Configuración Nginx (SSL comentado)
 │   │   ├── Dockerfile
 │   │   ├── nginx.conf
-│   │   └── conf.d/laravel.conf
+│   │   └── conf.d/
+│   │       ├── laravel.conf    # Configuración principal
+│   │       └── vite-dev.conf    # Configuración Vite (modular)
 │   ├── php/               # PHP 8.4 + extensiones (permisos corregidos)
 │   │   ├── Dockerfile
 │   │   └── conf.d/
@@ -310,6 +335,32 @@ docker network create red_general
 # Verificar la red
 docker network ls | grep red_general
 ```
+
+### Configuración de Vite
+
+La plantilla incluye soporte modular para Vite con configuración automática:
+
+#### **Desarrollo con Vite:**
+```bash
+# Iniciar con Vite habilitado
+make dev-with-vite
+```
+
+#### **Desarrollo sin Vite:**
+```bash
+# Iniciar solo Laravel (sin Node.js/Vite)
+make dev
+```
+
+#### **Configuración automática:**
+- **Nginx** se configura automáticamente para redirigir assets de Vite
+- **Solo se activa** cuando el contenedor `node` está presente
+- **No afecta** proyectos que no usen Vite
+- **Configuración modular** en `docker/nginx/conf.d/vite-dev.conf`
+
+#### **Para Nginx Proxy Manager:**
+- Solo necesitas configurar **un host** apuntando a `sboil_nginx:80`
+- Nginx interno redirige automáticamente las peticiones de Vite al contenedor Node
 
 ### SSL/HTTPS
 
@@ -608,6 +659,26 @@ make destroy
 | **sboil_reverb** | ✅ Up | 9000 | WebSockets |
 | **sboil_queue** | ✅ Up | 9000 | Queue worker |
 | **sboil_scheduler** | ✅ Up | 9000 | Cron jobs |
+
+### ✅ Soporte Vite Modular Implementado
+
+**Nuevas funcionalidades:**
+
+- **Configuración modular** de Vite que no afecta otros proyectos
+- **Comandos específicos** para desarrollo con/sin Vite
+- **Proxy automático** de Nginx para assets de Vite
+- **Compatibilidad total** con Nginx Proxy Manager
+- **Configuración segura** que se activa solo cuando es necesario
+
+**Archivos agregados:**
+- `docker/nginx/conf.d/vite-dev.conf` - Configuración modular de Vite
+- Comandos `make dev-with-vite` y `make dev` para diferentes tipos de desarrollo
+
+**Beneficios:**
+- ✅ **Reutilizable** - La plantilla funciona para cualquier proyecto
+- ✅ **Segura** - No afecta proyectos que no usen Vite  
+- ✅ **Flexible** - Se puede activar/desactivar fácilmente
+- ✅ **Mantenible** - Configuración separada y clara
 
 ## 📚 Documentación Adicional
 

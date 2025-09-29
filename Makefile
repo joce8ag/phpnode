@@ -246,6 +246,17 @@ dev: ## Iniciar entorno de desarrollo
 	@echo "  - make shell: Acceder al contenedor PHP"
 	@echo "  - make artisan cmd=\"route:list\": Ejecutar comandos artisan"
 
+dev-with-vite: ## Iniciar entorno de desarrollo con Vite
+	@echo "$(YELLOW)Iniciando entorno de desarrollo con Vite...$(NC)"
+	make up
+	make npm-install
+	@echo "$(GREEN)Entorno de desarrollo con Vite listo!$(NC)"
+	@echo "$(BLUE)Comandos útiles:$(NC)"
+	@echo "  - make logs: Ver logs en tiempo real"
+	@echo "  - make logs-node: Ver logs de Vite"
+	@echo "  - make shell: Acceder al contenedor PHP"
+	@echo "  - make node-shell: Acceder al contenedor Node"
+
 watch: ## Iniciar watchers para desarrollo
 	@echo "$(YELLOW)Iniciando watchers...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) exec -d node npm run watch
