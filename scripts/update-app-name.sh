@@ -41,7 +41,7 @@ NEW_APP_NAME=$1
 # Detectar el nombre actual desde docker-compose.yml
 if [ -f "docker-compose.yml" ]; then
     # Extraer el nombre actual del container_name
-    CURRENT_APP_NAME=$(grep "container_name:" docker-compose.yml | sed 's/.*\${APP_NAME:\([^}]*\)}.*/\1/')
+    CURRENT_APP_NAME=$(grep "container_name:" docker-compose.yml | sed 's/.*\${APP_NAME:-\([^}]*\)}.*/\1/')
     if [ -z "$CURRENT_APP_NAME" ]; then
         CURRENT_APP_NAME="sboil"
     fi
@@ -64,7 +64,7 @@ fi
 # 2. Actualizar docker-compose.yml
 log_info "Actualizando docker-compose.yml..."
 # Actualizar container_name
-sed -i.bak "s/container_name: \${APP_NAME:${CURRENT_APP_NAME}}_app/container_name: \${APP_NAME:${NEW_APP_NAME}}_app/g" docker-compose.yml
+sed -i.bak "s/container_name: \${APP_NAME:-${CURRENT_APP_NAME}}_app/container_name: \${APP_NAME:-${NEW_APP_NAME}}_app/g" docker-compose.yml
 # Actualizar PHP_IDE_CONFIG
 sed -i.bak "s/serverName=${CURRENT_APP_NAME}/serverName=${NEW_APP_NAME}/g" docker-compose.yml
 rm docker-compose.yml.bak
@@ -108,3 +108,4 @@ echo "  - Imagen: webapp:latest"
 echo "  - Servicios: Nginx + PHP-FPM + Node.js + Redis + Supervisor"
 echo ""
 log_success "¡La aplicación ahora se llama '$NEW_APP_NAME'!"
+

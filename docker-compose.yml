@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: webapp:latest
-    container_name: ${APP_NAME:superbasicos3}_app
+    container_name: ${APP_NAME:-superbasicos3}_app
     restart: unless-stopped
     working_dir: /var/www/html
     # Sin puertos expuestos - usar Nginx Proxy Manager
