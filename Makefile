@@ -89,6 +89,9 @@ migrate: ## Ejecutar migraciones
 migrate-fresh: ## Ejecutar migraciones desde cero
 	docker-compose -f $(COMPOSE_FILE) exec app php artisan migrate:fresh
 
+migrate-fresh-seed: ## Ejecutar migraciones desde cero y seeders
+	docker-compose -f $(COMPOSE_FILE) exec app php artisan migrate:fresh --seed
+
 seed: ## Ejecutar seeders
 	docker-compose -f $(COMPOSE_FILE) exec app php artisan db:seed
 
@@ -143,6 +146,18 @@ install-laravel: ## Instalar Laravel
 	docker-compose -f $(COMPOSE_FILE) exec app composer create-project laravel/laravel . --remove-vcs
 	@echo "$(GREEN)Laravel instalado correctamente!$(NC)"
 
+install-reverb: ## Instalar Laravel Reverb
+	@echo "$(YELLOW)Instalando Laravel Reverb...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) exec app php artisan install:broadcasting
+	@echo "$(GREEN)Laravel Reverb instalado correctamente!$(NC)"
+	@echo "$(YELLOW)Nota: Configura manualmente el archivo .env para Reverb$(NC)"
+
+install-livewire: ## Instalar Laravel Livewire
+	@echo "$(YELLOW)Instalando Laravel Livewire...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) exec app composer require livewire/livewire
+	docker-compose -f $(COMPOSE_FILE) exec app php artisan livewire:publish --config
+	@echo "$(GREEN)Laravel Livewire instalado correctamente!$(NC)"
+
 setup-env: ## Configurar archivo .env
 	@if [ ! -f "./app/.env" ]; then \
 		echo "$(YELLOW)Copiando archivo .env...$(NC)"; \
@@ -162,17 +177,7 @@ fresh: ## Instalación completa desde cero
 	@echo "$(GREEN)Instalación completada!$(NC)"
 
 # === COMANDOS DE BASE DE DATOS ===
-migrate: ## Ejecutar migraciones
-	docker-compose -f $(COMPOSE_FILE) exec app php artisan migrate
-
-migrate-fresh: ## Ejecutar migraciones desde cero
-	docker-compose -f $(COMPOSE_FILE) exec app php artisan migrate:fresh
-
-seed: ## Ejecutar seeders
-	docker-compose -f $(COMPOSE_FILE) exec app php artisan db:seed
-
-migrate-seed: ## Ejecutar migraciones y seeders
-	docker-compose -f $(COMPOSE_FILE) exec app php artisan migrate:fresh --seed
+# (Los comandos migrate, migrate-fresh, seed ya están definidos en la sección de ALIAS DE ARTISAN COMUNES)
 
 # === COMANDOS DE OPTIMIZACIÓN ===
 optimize: ## Optimizar aplicación para producción
@@ -188,8 +193,7 @@ clear-cache: ## Limpiar toda la cache
 	docker-compose -f $(COMPOSE_FILE) exec app php artisan cache:clear
 
 # === COMANDOS DE TESTING ===
-test: ## Ejecutar tests
-	docker-compose -f $(COMPOSE_FILE) exec app php artisan test
+# test: ## Ejecutar tests (ya definido en ALIAS DE ARTISAN COMUNES)
 
 # === COMANDOS DE PRODUCCIÓN ===
 deploy-prod: ## Desplegar en producción

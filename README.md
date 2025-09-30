@@ -1,4 +1,4 @@
-# SBoil - Plantilla Laravel Simplificada
+# Plantilla Laravel Simplificada
 
 Una plantilla **ultra-simplificada** de Docker para desarrollar y desplegar aplicaciones Laravel con **una sola imagen y un solo contenedor**.
 
@@ -10,6 +10,8 @@ Una plantilla **ultra-simplificada** de Docker para desarrollar y desplegar apli
 - **Redis** para cache, sesiones y colas
 - **Vite** integrado para desarrollo frontend
 - **Queue Workers** y **Scheduler** automáticos
+- **Laravel Reverb** para WebSockets (opcional)
+- **Laravel Livewire** para componentes reactivos (opcional)
 - **Compatible con Nginx Proxy Manager**
 - **Estructura ultra-simple** y fácil de replicar
 
@@ -47,101 +49,62 @@ docker network create red_general
 ### **Comandos básicos:**
 
 ```bash
-# Ver todos los comandos disponibles
-make help
-
-# Iniciar la aplicación
-make up
-
-# Ver logs en tiempo real
-make logs
-
-# Acceder al contenedor
-make shell
-
-# Estado de contenedores
-make status
-
-# Reiniciar aplicación
-make restart
-
-# Detener aplicación
-make down
+make help      # Ver todos los comandos disponibles
+make up        # Iniciar la aplicación
+make down      # Detener aplicación
+make restart   # Reiniciar aplicación
+make logs      # Ver logs en tiempo real
+make shell     # Acceder al contenedor
+make status    # Estado de contenedores
 ```
 
 ### **Comandos de Laravel:**
 
 ```bash
-# Ejecutar comando artisan
-make artisan cmd="migrate"
-make artisan cmd="make:controller UserController"
-
-# Migraciones
-make migrate
-make migrate-fresh
-make migrate-seed
-
-# Cache
-make clear-cache
-make optimize
-
-# Tests
-make test
+make artisan cmd="migrate"           # Ejecutar comando artisan
+make migrate                        # Migraciones
+make migrate-fresh                  # Migraciones desde cero
+make migrate-seed                   # Migraciones + seeders
+make clear-cache                    # Limpiar cache
+make optimize                       # Optimizar aplicación
+make test                          # Ejecutar tests
 ```
 
 ### **Comandos de Node.js/Vite:**
 
 ```bash
-# Instalar dependencias
-make npm-install
-
-# Servidor de desarrollo Vite
-make npm-dev
-
-# Build para producción
-make npm-build
-
-# Ejecutar comando npm personalizado
-make npm cmd="install lodash"
+make npm-install    # Instalar dependencias
+make npm-dev        # Servidor de desarrollo Vite
+make npm-build      # Build para producción
+make npm cmd="install lodash"  # Comando npm personalizado
 ```
 
 ### **Comandos de instalación:**
 
 ```bash
-# Instalación completa desde cero
-make fresh
+# Instalación básica
+make fresh                    # Instalación completa desde cero
+make install-laravel         # Solo instalar Laravel
+make setup-env              # Configurar archivo .env
 
-# Solo instalar Laravel
-make install-laravel
+# Paquetes adicionales
+make install-livewire       # Laravel Livewire (componentes reactivos)
+make install-reverb         # Laravel Reverb (WebSockets)
 
-# Configurar .env
-make setup-env
-```
 
 ### **Comandos de producción:**
-
 ```bash
-# Desplegar en producción
-make deploy-prod
-
-# Crear backup
-make backup
-
-# Optimizar para producción
-make optimize
+make deploy-prod  # Desplegar en producción
+make backup       # Crear backup
+make optimize     # Optimizar para producción
 ```
 
 ### **Comandos de limpieza:**
 
 ```bash
-# Limpiar recursos Docker
-make clean
-
-# Limpiar todo (incluyendo imágenes)
-make clean-all
-
-# Eliminar completamente el proyecto
-make destroy
+make clean      # Limpiar recursos Docker
+make clean-all  # Limpiar todo (incluyendo imágenes)
+make destroy    # Eliminar completamente el proyecto
 ```
 
 ## 📁 Estructura del Proyecto
@@ -197,7 +160,7 @@ docker network ls | grep red_general
 
 1. **Configurar NPM:**
    - **Domain**: `tu-dominio.com`
-   - **Forward Hostname/IP**: `sboil_app` (o IP del contenedor)
+   - **Forward Hostname/IP**: `<nombreapp>_app` (o IP del contenedor)
    - **Forward Port**: `80`
    - **Websockets Support**: ✅ Activado
 
@@ -206,41 +169,16 @@ docker network ls | grep red_general
 make deploy-prod
 ```
 
-### **Sin Nginx Proxy Manager**
-
-La aplicación expone automáticamente:
-- **Puerto 80**: Aplicación Laravel
-- **Puerto 5173**: Vite (desarrollo)
-
-```bash
-# Acceso directo
-http://localhost        # Laravel
-http://localhost:5173   # Vite (desarrollo)
-```
-
 ## 🛠️ Desarrollo
 
 ### **Flujo de trabajo:**
 
 ```bash
-# 1. Iniciar desarrollo
-make dev
-
-# 2. Acceder al contenedor
-make shell
-
-# 3. Ver logs
-make logs
-
-# 4. Ejecutar comandos Laravel
-make artisan cmd="migrate"
-make artisan cmd="make:controller UserController"
-
-# 5. Instalar dependencias Node
-make npm-install
-
-# 6. Desarrollo frontend
-make npm-dev
+# Desarrollo básico
+make dev                  # Iniciar desarrollo
+make shell               # Acceder al contenedor
+make logs                # Ver logs
+make artisan cmd="migrate"  # Comandos Laravel
 ```
 
 ### **Servicios incluidos:**
@@ -251,45 +189,6 @@ make npm-dev
 - **Queue Worker**: Procesamiento de colas
 - **Scheduler**: Tareas programadas (cron)
 - **Redis**: Cache y sesiones
-
-## 📊 Ventajas de la Simplificación
-
-### **✅ Ventajas:**
-
-- **Ultra-simple**: Un solo contenedor, una sola imagen
-- **Fácil de replicar**: Copia y ejecuta
-- **Menos recursos**: Un solo contenedor en lugar de 7
-- **Configuración única**: Todo en un lugar
-- **Despliegue rápido**: `make up` y listo
-- **Debugging fácil**: Un solo lugar para logs
-- **Mantenimiento simple**: Menos complejidad
-
-### **🔄 Comparación:**
-
-| Aspecto | Antes (7 contenedores) | Ahora (1 contenedor) |
-|---------|----------------------|---------------------|
-| **Complejidad** | Alta | Mínima |
-| **Recursos** | 7 contenedores | 1 contenedor |
-| **Configuración** | 7 servicios | 1 servicio |
-| **Debugging** | 7 logs separados | 1 log unificado |
-| **Despliegue** | Múltiples pasos | Un solo comando |
-
-## 🎯 Casos de Uso
-
-### **✅ Perfecto para:**
-
-- **Desarrollo rápido** de aplicaciones Laravel
-- **Prototipos** y MVPs
-- **Aplicaciones pequeñas/medianas**
-- **Desarrollo local** sin complejidad
-- **Aprendizaje** de Laravel + Docker
-- **Despliegues simples**
-
-### **⚠️ Consideraciones:**
-
-- **Escalabilidad**: Para aplicaciones muy grandes, considera microservicios
-- **Recursos**: Un solo contenedor consume más memoria que contenedores separados
-- **Aislamiento**: Menos aislamiento entre servicios
 
 ## 🔧 Personalización
 
@@ -306,6 +205,22 @@ Edita `docker/supervisor/supervisord.conf` para:
 - **PHP**: `docker/php/conf.d/custom.ini`
 - **Supervisor**: `docker/supervisor/supervisord.conf`
 
+### **Ejemplos de uso:**
+
+```bash
+# Aplicación básica
+make fresh && make setup-env
+
+# Con Livewire (componentes reactivos)
+make fresh && make install-livewire && make setup-env
+
+# Con Reverb (WebSockets)
+make fresh && make install-reverb && make setup-env
+
+# Aplicación completa
+make fresh && make install-livewire && make install-reverb && make setup-env
+```
+
 ## 📚 Documentación Adicional
 
 - [Laravel Documentation](https://laravel.com/docs)
@@ -313,14 +228,3 @@ Edita `docker/supervisor/supervisord.conf` para:
 - [Nginx Documentation](https://nginx.org/en/docs/)
 - [Supervisor Documentation](http://supervisord.org/)
 
-## 🎉 Conclusión
-
-**¡SBoil simplificado está listo!**
-
-- ✅ **Ultra-simple**: Un solo contenedor
-- ✅ **Fácil de usar**: Comandos intuitivos
-- ✅ **Completamente funcional**: Laravel + Vite + Redis
-- ✅ **Listo para producción**: Con Nginx Proxy Manager
-- ✅ **Fácil de replicar**: Copia y ejecuta
-
-**¡Happy coding! 🎉**

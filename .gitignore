@@ -1,18 +1,6 @@
 # Laravel
-/app/vendor/
-/app/node_modules/
-/app/public/hot
-/app/public/storage
-/app/storage/*.key
-/app/.env
-/app/.env.backup
-/app/.phpunit.result.cache
-/app/Homestead.json
-/app/Homestead.yaml
-/app/npm-debug.log
-/app/yarn-error.log
-/app/.idea
-/app/.vscode
+app/
+!app/.gitkeep
 
 # Docker
 .env.local
