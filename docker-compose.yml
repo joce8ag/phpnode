@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: webapp:latest
-    container_name: ${APP_NAME:-test-nuevo-nombre}_app
+    container_name: ${APP_NAME:superbasicos3}_app
     restart: unless-stopped
     working_dir: /var/www/html
     # Sin puertos expuestos - usar Nginx Proxy Manager
@@ -22,7 +22,7 @@ services:
       - app_network
       - red_general
     environment:
-      - PHP_IDE_CONFIG=serverName=test-nuevo-nombre
+      - PHP_IDE_CONFIG=serverName=superbasicos3
       - NODE_ENV=development
 
 networks:
