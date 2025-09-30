@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script para actualizar el nombre de la aplicación en todos los archivos
+# Script para actualizar el nombre de la aplicación en la estructura simplificada
 # Uso: ./scripts/update-app-name.sh <nuevo_nombre>
 
 set -e
@@ -38,14 +38,8 @@ fi
 
 NEW_APP_NAME=$1
 
-# Leer configuración actual
-if [ -f ".app-config" ]; then
-    source .app-config
-    CURRENT_APP_NAME=$APP_NAME
-else
-    log_warning "Archivo .app-config no encontrado, usando 'sboil' como nombre actual"
-    CURRENT_APP_NAME="sboil"
-fi
+# Nombre actual de la aplicación
+CURRENT_APP_NAME="sboil"
 
 log_info "Actualizando nombre de aplicación de '$CURRENT_APP_NAME' a '$NEW_APP_NAME'"
 
@@ -55,111 +49,30 @@ if [ "$CURRENT_APP_NAME" = "$NEW_APP_NAME" ]; then
     exit 0
 fi
 
-# Crear backup
-BACKUP_DIR="backups"
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-mkdir -p $BACKUP_DIR
+# No necesitamos backup para cambios tan simples
 
-log_info "Creando backup antes de la actualización..."
-tar -czf "$BACKUP_DIR/pre-rename-$TIMESTAMP.tar.gz" \
-    --exclude=backups \
-    docker-compose.yml \
-    docker-compose.production.yml \
-    Makefile \
-    scripts/ \
-    docker/ \
-    .app-config \
-    env.example \
-    env.production
+# No se actualiza .app-config (archivo eliminado)
 
-log_success "Backup creado: $BACKUP_DIR/pre-rename-$TIMESTAMP.tar.gz"
-
-# Actualizar .app-config
-log_info "Actualizando .app-config..."
-sed -i.bak "s/APP_NAME=$CURRENT_APP_NAME/APP_NAME=$NEW_APP_NAME/g" .app-config
-rm .app-config.bak
-
-# Actualizar docker-compose.yml
+# 2. Actualizar docker-compose.yml
 log_info "Actualizando docker-compose.yml..."
-sed -i.bak "s/${CURRENT_APP_NAME}_/${NEW_APP_NAME}_/g" docker-compose.yml
-sed -i.bak "s/container_name: ${CURRENT_APP_NAME}_/container_name: ${NEW_APP_NAME}_/g" docker-compose.yml
+# Actualizar container_name
+sed -i.bak "s/container_name: \${APP_NAME:-${CURRENT_APP_NAME}}_app/container_name: \${APP_NAME:-${NEW_APP_NAME}}_app/g" docker-compose.yml
+# Actualizar PHP_IDE_CONFIG
+sed -i.bak "s/serverName=${CURRENT_APP_NAME}/serverName=${NEW_APP_NAME}/g" docker-compose.yml
 rm docker-compose.yml.bak
 
-# Actualizar docker-compose.production.yml
-if [ -f "docker-compose.production.yml" ]; then
-    log_info "Actualizando docker-compose.production.yml..."
-    sed -i.bak "s/${CURRENT_APP_NAME}_/${NEW_APP_NAME}_/g" docker-compose.production.yml
-    sed -i.bak "s/container_name: ${CURRENT_APP_NAME}_/container_name: ${NEW_APP_NAME}_/g" docker-compose.production.yml
-    rm docker-compose.production.yml.bak
-fi
-
-# Actualizar Makefile
+# 3. Actualizar Makefile
 log_info "Actualizando Makefile..."
 sed -i.bak "s/BASE_APP_NAME=$CURRENT_APP_NAME/BASE_APP_NAME=$NEW_APP_NAME/g" Makefile
-# Actualizar también las variables que usan BASE_APP_NAME (aunque no las usemos más)
-sed -i.bak "s/APP_CONTAINER=\$(BASE_APP_NAME)_php/APP_CONTAINER=\$(BASE_APP_NAME)_php/g" Makefile
-sed -i.bak "s/NODE_CONTAINER=\$(BASE_APP_NAME)_node/NODE_CONTAINER=\$(BASE_APP_NAME)_node/g" Makefile
-sed -i.bak "s/NGINX_CONTAINER=\$(BASE_APP_NAME)_nginx/NGINX_CONTAINER=\$(BASE_APP_NAME)_nginx/g" Makefile
-sed -i.bak "s/REDIS_CONTAINER=\$(BASE_APP_NAME)_redis/REDIS_CONTAINER=\$(BASE_APP_NAME)_redis/g" Makefile
 rm Makefile.bak
 
-# Actualizar scripts
-log_info "Actualizando scripts..."
-for script in scripts/*.sh; do
-    if [ -f "$script" ]; then
-        sed -i.bak "s/BASE_APP_NAME=\"$CURRENT_APP_NAME\"/BASE_APP_NAME=\"$NEW_APP_NAME\"/g" "$script"
-        rm "$script.bak"
-    fi
-done
-
-# Actualizar configuraciones de Docker
-if [ -f "docker/nginx/conf.d/laravel.conf" ]; then
-    log_info "Actualizando configuración de nginx..."
-    sed -i.bak "s/${CURRENT_APP_NAME}\.local/${NEW_APP_NAME}\.local/g" docker/nginx/conf.d/laravel.conf
-    sed -i.bak "s/\*\.${CURRENT_APP_NAME}\.local/\*\.${NEW_APP_NAME}\.local/g" docker/nginx/conf.d/laravel.conf
-    rm docker/nginx/conf.d/laravel.conf.bak
-fi
-
-# Actualizar archivos de entorno
-if [ -f "env.example" ]; then
-    log_info "Actualizando env.example..."
-    # Capitalizar primera letra para APP_NAME
-    NEW_APP_NAME_CAPITALIZED=$(echo "$NEW_APP_NAME" | sed 's/./\U&/')
-    sed -i.bak "s/APP_NAME=SBoil/APP_NAME=$NEW_APP_NAME_CAPITALIZED/g" env.example
-    rm env.example.bak
-fi
-
-if [ -f "env.production" ]; then
-    log_info "Actualizando env.production..."
-    # Capitalizar primera letra para APP_NAME
-    NEW_APP_NAME_CAPITALIZED=$(echo "$NEW_APP_NAME" | sed 's/./\U&/')
-    sed -i.bak "s/APP_NAME=SBoil/APP_NAME=$NEW_APP_NAME_CAPITALIZED/g" env.production
-    rm env.production.bak
-fi
-
-# Actualizar README.md si existe
+# 4. Actualizar README.md
 if [ -f "README.md" ]; then
     log_info "Actualizando README.md..."
-    sed -i.bak "s/# SBoil/# $NEW_APP_NAME/g" README.md
     sed -i.bak "s/sboil/$NEW_APP_NAME/g" README.md
+    sed -i.bak "s/<nombreapp>_app/${NEW_APP_NAME}_app/g" README.md
     rm README.md.bak
 fi
-
-# Crear backup post-actualización
-log_info "Creando backup post-actualización..."
-tar -czf "$BACKUP_DIR/post-rename-$TIMESTAMP.tar.gz" \
-    --exclude=backups \
-    docker-compose.yml \
-    docker-compose.production.yml \
-    Makefile \
-    scripts/ \
-    docker/ \
-    .app-config \
-    env.example \
-    env.production \
-    README.md
-
-log_success "Backup post-actualización creado: $BACKUP_DIR/post-rename-$TIMESTAMP.tar.gz"
 
 # Resumen
 echo ""
@@ -170,24 +83,20 @@ echo -e "  ${GREEN}Nombre anterior:${NC} $CURRENT_APP_NAME"
 echo -e "  ${GREEN}Nombre nuevo:${NC} $NEW_APP_NAME"
 echo ""
 log_info "Archivos actualizados:"
-echo "  - .app-config"
-echo "  - docker-compose.yml"
-echo "  - docker-compose.production.yml (si existe)"
-echo "  - Makefile"
-echo "  - scripts/*.sh"
-echo "  - docker/nginx/conf.d/laravel.conf (si existe)"
-echo "  - env.example (si existe)"
-echo "  - env.production (si existe)"
-echo "  - README.md (si existe)"
-echo ""
-log_info "Backups creados:"
-echo "  - Pre-actualización: $BACKUP_DIR/pre-rename-$TIMESTAMP.tar.gz"
-echo "  - Post-actualización: $BACKUP_DIR/post-rename-$TIMESTAMP.tar.gz"
+# .app-config eliminado del proyecto
+echo "  - docker-compose.yml (container_name y PHP_IDE_CONFIG)"
+echo "  - Makefile (BASE_APP_NAME)"
+echo "  - README.md (referencias al nombre)"
 echo ""
 log_warning "IMPORTANTE: Si tienes contenedores ejecutándose, ejecuta:"
 echo "  make down"
 echo "  make clean"
 echo "  make build"
 echo "  make up"
+echo ""
+log_info "Estructura actualizada:"
+echo "  - Contenedor: ${NEW_APP_NAME}_app"
+echo "  - Imagen: webapp:latest"
+echo "  - Servicios: Nginx + PHP-FPM + Node.js + Redis + Supervisor"
 echo ""
 log_success "¡La aplicación ahora se llama '$NEW_APP_NAME'!"

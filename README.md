@@ -110,7 +110,7 @@ make destroy    # Eliminar completamente el proyecto
 ## 📁 Estructura del Proyecto
 
 ```
-sboil/
+test-app/
 ├── app/                    # Código de Laravel (se crea al instalar)
 ├── docker/                 # Configuraciones Docker
 │   ├── nginx/             # Configuración Nginx
@@ -160,7 +160,7 @@ docker network ls | grep red_general
 
 1. **Configurar NPM:**
    - **Domain**: `tu-dominio.com`
-   - **Forward Hostname/IP**: `<nombreapp>_app` (o IP del contenedor)
+   - **Forward Hostname/IP**: `test-app_app` (o IP del contenedor)
    - **Forward Port**: `80`
    - **Websockets Support**: ✅ Activado
 

@@ -6,13 +6,7 @@
 set -e
 
 # Configuración de la aplicación base
-# Leer el nombre desde .app-config si existe
-if [ -f ".app-config" ]; then
-    source .app-config
-    BASE_APP_NAME=$APP_NAME
-else
-    BASE_APP_NAME="sboil"
-fi
+BASE_APP_NAME="sboil"
 
 # Colores para output
 RED='\033[0;31m'
@@ -108,19 +102,13 @@ cp -r docker/ "$NEW_APP_DIR/"
 log_info "   🔧 Copiando docker-compose.yml..."
 cp docker-compose.yml "$NEW_APP_DIR/"
 
-if [ -f "docker-compose.production.yml" ]; then
-    log_info "   🚀 Copiando docker-compose.production.yml..."
-    cp docker-compose.production.yml "$NEW_APP_DIR/"
-fi
-
 log_info "   ⚙️  Copiando Makefile..."
 cp Makefile "$NEW_APP_DIR/"
 
 log_info "   📜 Copiando scripts..."
 cp -r scripts/ "$NEW_APP_DIR/"
 
-log_info "   🔐 Copiando .app-config..."
-cp .app-config "$NEW_APP_DIR/"
+# No se copia .app-config (archivo eliminado)
 
 if [ -f "README.md" ]; then
     log_info "   📖 Copiando README original..."
@@ -133,10 +121,6 @@ if [ -f "env.example" ]; then
     cp env.example "$NEW_APP_DIR/"
 fi
 
-if [ -f "env.production" ]; then
-    cp env.production "$NEW_APP_DIR/"
-fi
-
 # Crear directorio app vacío
 log_info "   📱 Creando directorio app..."
 mkdir -p "$NEW_APP_DIR/app"
@@ -146,20 +130,8 @@ echo ""
 log_info "📝 Creando archivo .gitignore..."
 cat > "$NEW_APP_DIR/.gitignore" << EOF
 # Laravel
-/app/vendor/
-/app/node_modules/
-/app/public/hot
-/app/public/storage
-/app/storage/*.key
-/app/.env
-/app/.env.backup
-/app/.phpunit.result.cache
-/app/Homestead.json
-/app/Homestead.yaml
-/app/npm-debug.log
-/app/yarn-error.log
-/app/.idea
-/app/.vscode
+app/
+!app/.gitkeep
 
 # Docker
 .env.local
@@ -186,32 +158,26 @@ echo ""
 log_info "🔄 Personalizando archivos para '$NEW_APP_NAME'..."
 echo ""
 log_info "   🐳 Actualizando docker-compose.yml..."
-sed -i.bak "s/${BASE_APP_NAME}_/${NEW_APP_NAME}_/g" "$NEW_APP_DIR/docker-compose.yml"
-sed -i.bak "s/${BASE_APP_NAME}/${NEW_APP_NAME}/g" "$NEW_APP_DIR/docker-compose.yml"
+# Actualizar container_name para la estructura unificada
+sed -i.bak "s/container_name: \${APP_NAME:-${BASE_APP_NAME}}_app/container_name: \${APP_NAME:-${NEW_APP_NAME}}_app/g" "$NEW_APP_DIR/docker-compose.yml"
+# Actualizar PHP_IDE_CONFIG
+sed -i.bak "s/serverName=${BASE_APP_NAME}/serverName=${NEW_APP_NAME}/g" "$NEW_APP_DIR/docker-compose.yml"
 rm "$NEW_APP_DIR/docker-compose.yml.bak"
 
-# Actualizar docker-compose.production.yml si existe
-if [ -f "$NEW_APP_DIR/docker-compose.production.yml" ]; then
-    log_info "   🚀 Actualizando docker-compose.production.yml..."
-    sed -i.bak "s/${BASE_APP_NAME}_/${NEW_APP_NAME}_/g" "$NEW_APP_DIR/docker-compose.production.yml"
-    sed -i.bak "s/${BASE_APP_NAME}/${NEW_APP_NAME}/g" "$NEW_APP_DIR/docker-compose.production.yml"
-    rm "$NEW_APP_DIR/docker-compose.production.yml.bak"
-fi
+# No hay docker-compose.production.yml en la nueva estructura
 
 # Actualizar Makefile
 log_info "   ⚙️  Actualizando Makefile..."
 sed -i.bak "s/BASE_APP_NAME=${BASE_APP_NAME}/BASE_APP_NAME=${NEW_APP_NAME}/g" "$NEW_APP_DIR/Makefile"
 rm "$NEW_APP_DIR/Makefile.bak"
 
-# Actualizar .app-config
-log_info "   🔐 Actualizando .app-config..."
-sed -i.bak "s/APP_NAME=${BASE_APP_NAME}/APP_NAME=${NEW_APP_NAME}/g" "$NEW_APP_DIR/.app-config"
-rm "$NEW_APP_DIR/.app-config.bak"
+# No se actualiza .app-config (archivo eliminado)
 
 # Actualizar configuraciones de Docker
 if [ -f "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf" ]; then
     log_info "   🌐 Actualizando configuración Nginx..."
-    sed -i.bak "s/${BASE_APP_NAME}\.local/${NEW_APP_NAME}\.local/g" "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf"
+    # Actualizar server_name en la configuración de nginx
+    sed -i.bak "s/server_name localhost ${BASE_APP_NAME}\.local/server_name localhost ${NEW_APP_NAME}\.local/g" "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf"
     sed -i.bak "s/\*\.${BASE_APP_NAME}\.local/\*\.${NEW_APP_NAME}\.local/g" "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf"
     rm "$NEW_APP_DIR/docker/nginx/conf.d/laravel.conf.bak"
 fi
@@ -219,142 +185,34 @@ fi
 # Actualizar archivos de entorno
 if [ -f "$NEW_APP_DIR/env.example" ]; then
     log_info "   🌱 Actualizando env.example..."
-    sed -i.bak "s/APP_NAME=SBoil/APP_NAME=$NEW_APP_NAME/g" "$NEW_APP_DIR/env.example"
+    # Actualizar APP_NAME en env.example
+    sed -i.bak "s/APP_NAME=${BASE_APP_NAME}/APP_NAME=${NEW_APP_NAME}/g" "$NEW_APP_DIR/env.example"
+    # Actualizar APP_URL si contiene el nombre de la aplicación
+    sed -i.bak "s/${BASE_APP_NAME}\.superbasicos\.com\.tes/${NEW_APP_NAME}\.superbasicos\.com\.tes/g" "$NEW_APP_DIR/env.example"
     rm "$NEW_APP_DIR/env.example.bak"
 fi
 
-if [ -f "$NEW_APP_DIR/env.production" ]; then
-    log_info "   🏭 Actualizando env.production..."
-    sed -i.bak "s/APP_NAME=SBoil/APP_NAME=$NEW_APP_NAME/g" "$NEW_APP_DIR/env.production"
-    rm "$NEW_APP_DIR/env.production.bak"
-fi
+# No hay env.production en la nueva estructura
 
 # Hacer scripts ejecutables
 echo ""
 log_info "🔧 Configurando permisos de scripts..."
-chmod +x "$NEW_APP_DIR/scripts/"*.sh
+if [ -d "$NEW_APP_DIR/scripts" ]; then
+    chmod +x "$NEW_APP_DIR/scripts/"*.sh 2>/dev/null || true
+fi
 
 # Crear README.md para la nueva aplicación
 echo ""
-log_info "📚 Creando README.md personalizado..."
-cat > "$NEW_APP_DIR/README.md" << EOF
-# $NEW_APP_NAME
+log_info "📚 Personalizando README.md..."
+# Copiar el README existente y personalizarlo
+cp README.md "$NEW_APP_DIR/README.md"
 
-Aplicación Laravel con Docker, configurada con Laravel Reverb para WebSockets.
-
-## Características
-
-- **PHP 8.4** con PHP-FPM
-- **Nginx** como servidor web
-- **Node.js 22** para Vite
-- **Laravel Reverb** para WebSockets en tiempo real
-- **Redis** para cache y sesiones
-- **Queue Workers** para procesamiento en background
-- **Scheduler** para tareas programadas
-
-## Inicio Rápido
-
-### 1. Instalación inicial completa
-
-\`\`\`bash
-# Inicializar aplicación completa
-./scripts/init.sh
-
-# O usar make para instalación completa
-make fresh
-\`\`\`
-
-### 2. Desarrollo
-
-\`\`\`bash
-# Iniciar entorno de desarrollo
-make dev
-
-# Ver logs en tiempo real
-make logs
-
-# Acceder al contenedor PHP
-make shell
-
-# Ejecutar comandos artisan
-make artisan cmd="migrate"
-
-# Instalar dependencias npm
-make npm-install
-
-# Iniciar servidor de desarrollo Vite
-make npm-dev
-\`\`\`
-
-### 3. Comandos útiles
-
-\`\`\`bash
-# Ver todos los comandos disponibles
-make help
-
-# Estado de contenedores
-make status
-
-# Reiniciar servicios
-make restart
-
-# Limpiar cache
-make clear-cache
-
-# Ejecutar tests
-make test
-\`\`\`
-
-## Puertos
-
-- **80**: Aplicación web (HTTP)
-- **8080**: Laravel Reverb (WebSockets)
-- **5173**: Vite dev server
-- **6379**: Redis
-
-> **Nota:** Para HTTPS/SSL usar Nginx Proxy Manager u otro proxy reverso.
-
-## Estructura
-
-\`\`\`
-$NEW_APP_NAME/
-├── app/                    # Código de Laravel
-├── docker/                 # Configuraciones Docker
-│   ├── nginx/             # Configuración Nginx
-│   ├── php/               # Configuración PHP-FPM
-│   └── node/              # Configuración Node.js
-├── scripts/               # Scripts de automatización
-├── docker-compose.yml     # Configuración Docker Compose
-├── Makefile              # Comandos abreviados
-└── README.md             # Este archivo
-\`\`\`
-
-## Despliegue en Producción
-
-\`\`\`bash
-# Desplegar en producción
-./scripts/deploy.sh production
-
-# O usar make
-make deploy-prod
-\`\`\`
-
-## Red Externa
-
-Esta aplicación se conecta a la red Docker externa \`red_general\` para comunicarse con la base de datos y otros servicios.
-
-## Personalización
-
-Para crear una nueva aplicación basada en esta plantilla:
-
-\`\`\`bash
-./scripts/copy-template.sh nueva-aplicacion /ruta/destino/
-\`\`\`
-
-## Soporte
-
-Para más información sobre comandos disponibles: \`make help\`
-EOF
+# Personalizar el README para la nueva aplicación
+sed -i.bak "s/# Plantilla Laravel Simplificada/# $NEW_APP_NAME/g" "$NEW_APP_DIR/README.md"
+sed -i.bak "s/Una plantilla \*\*ultra-simplificada\*\* de Docker para desarrollar y desplegar aplicaciones Laravel con \*\*una sola imagen y un solo contenedor\*\*./Aplicación Laravel con Docker unificado, configurada con Laravel Reverb para WebSockets./g" "$NEW_APP_DIR/README.md"
+sed -i.bak "s/sboil/$NEW_APP_NAME/g" "$NEW_APP_DIR/README.md"
+sed -i.bak "s/<nombreapp>_app/${NEW_APP_NAME}_app/g" "$NEW_APP_DIR/README.md"
+rm "$NEW_APP_DIR/README.md.bak"
 
 echo ""
 echo "════════════════════════════════════════════════════════════════"
@@ -367,20 +225,22 @@ echo ""
 log_info "📁 Archivos importantes creados:"
 echo "   📖 README.md                 - Documentación de la nueva aplicación"
 echo "   📘 README-original.md        - Documentación original de la plantilla"
-echo "   🔐 .app-config              - Configuración de la aplicación"
+# .app-config eliminado del proyecto
 echo "   🐳 docker-compose.yml       - Configuración Docker"
 echo "   ⚙️  Makefile                - Comandos automatizados"
 echo ""
 log_info "🚀 PRÓXIMOS PASOS:"
 echo "   1️⃣  cd $NEW_APP_DIR"
-echo "   2️⃣  ./scripts/init.sh         # Instalación completa automática"
+echo "   2️⃣  make fresh                # Instalación completa automática"
 echo "   3️⃣  make dev                  # Iniciar desarrollo"
 echo ""
 log_info "🛠️  COMANDOS ÚTILES:"
 echo "   📋 make help                  # Ver todos los comandos disponibles"
 echo "   📊 make logs                  # Ver logs en tiempo real"
-echo "   🐚 make shell                 # Acceder al contenedor PHP"
+echo "   🐚 make shell                 # Acceder al contenedor unificado"
 echo "   🔧 make artisan cmd=\"...\"     # Ejecutar comandos artisan"
+echo "   🚀 make install-livewire      # Instalar Laravel Livewire"
+echo "   🔌 make install-reverb        # Instalar Laravel Reverb"
 echo ""
 echo "════════════════════════════════════════════════════════════════"
 log_success "✨ ¡La aplicación '$NEW_APP_NAME' está lista para usar! ✨"
