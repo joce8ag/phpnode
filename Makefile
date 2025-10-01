@@ -4,7 +4,7 @@
 .PHONY: help build up down restart logs shell composer artisan npm install-laravel fresh migrate seed optimize test backup restore deploy clean
 
 # Variables de configuración
-BASE_APP_NAME=superbasicos3
+BASE_APP_NAME=sboil
 COMPOSE_FILE=docker-compose.yml
 APP_CONTAINER=$(BASE_APP_NAME)_app
 

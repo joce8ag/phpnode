@@ -1,17 +1,12 @@
 services:
-  # Servicio unificado: PHP + Nginx + Node.js + Redis
   app:
     build:
       context: .
       dockerfile: Dockerfile
     image: webapp:latest
-    container_name: ${APP_NAME:-superbasicos3}_app
+    container_name: ${APP_NAME:-sboil}_app
     restart: unless-stopped
     working_dir: /var/www/html
-    # Sin puertos expuestos - usar Nginx Proxy Manager
-    # ports:
-    #   - "80:80"     # Nginx (manejado por Nginx Proxy Manager)
-    #   - "5173:5173" # Vite (solo para desarrollo local)
     volumes:
       - ./app:/var/www/html
       - ./docker/nginx/conf.d/laravel.conf:/etc/nginx/sites-available/default
@@ -22,8 +17,10 @@ services:
       - app_network
       - red_general
     environment:
-      - PHP_IDE_CONFIG=serverName=superbasicos3
+      - PHP_IDE_CONFIG=serverName=sboil
       - NODE_ENV=development
+    extra_hosts:                # 👈 aquí mapeamos el host
+      - "host.docker.internal:host-gateway"
 
 networks:
   app_network:
